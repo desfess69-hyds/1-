@@ -2,6 +2,18 @@ import { useState, useCallback, useRef } from 'react';
 import { initialAgents, type Agent, type AgentStatus } from '@/data/agents';
 import type { Activity } from '@/components/ActivityFeed';
 
+// /api/chat SSE 위임 이벤트
+export interface PhaseEvent {
+  phase: 'planning' | 'plan-ready' | 'delegating' | 'worker-done' | 'synthesizing' | 'complete' | 'error';
+  plan?: Array<{ agent: string; task: string }>;
+  reasoning?: string;
+  agent?: string;
+  task?: string;
+  result?: string;
+  reply?: string;
+  error?: boolean | string;
+}
+
 let activityCounter = 0;
 
 function genId() {
@@ -38,6 +50,67 @@ export function useOfficeSimulation() {
     const t = window.setTimeout(() => setStatus(id, 'idle', undefined), ms);
     timeoutsRef.current.push(t);
   }, [setStatus]);
+
+  const nameOf = useCallback(
+    (id: string) => initialAgents.find(a => a.id === id)?.name || id,
+    [],
+  );
+
+  // SSE 위임 이벤트 → 캐릭터/활동 로그 반영
+  const handlePhase = useCallback((ev: PhaseEvent) => {
+    const now = Date.now();
+    switch (ev.phase) {
+      case 'planning':
+        setStatus('hyds-director', 'thinking', '요청 분석 중...');
+        addActivity({ id: `ph-plan-${now}`, agentName: '부장', message: '요청 분석 — 작업 분해 중', ts: now, type: 'planning' });
+        break;
+      case 'plan-ready':
+        if (ev.reasoning) {
+          addActivity({ id: `ph-reason-${now}`, agentName: '부장', message: `분해: ${ev.reasoning}`, ts: now, type: 'planning' });
+        }
+        break;
+      case 'delegating': {
+        const plan = ev.plan || [];
+        addActivity({ id: `ph-deleg-${now}`, agentName: '부장', message: `${plan.length}개 팀장에게 위임`, ts: now, type: 'delegating' });
+        plan.forEach((item, i) => {
+          const bubble = item.task.slice(0, 30) + (item.task.length > 30 ? '…' : '');
+          setStatus(item.agent, 'working', bubble);
+          addActivity({ id: `ph-deleg-${now}-${i}`, agentName: nameOf(item.agent), message: `▶ ${item.task}`, ts: now + i + 1, type: 'delegating' });
+        });
+        break;
+      }
+      case 'worker-done': {
+        const id = ev.agent || '';
+        setStatus(id, 'idle', undefined);
+        const short = (ev.result || '').replace(/\s+/g, ' ').trim().slice(0, 90);
+        addActivity({
+          id: `ph-done-${id}-${now}`,
+          agentName: nameOf(id),
+          message: `${ev.error ? '⚠️' : '✅'} ${ev.task} → ${short}${short.length >= 90 ? '…' : ''}`,
+          ts: now,
+          type: ev.error ? 'alert' : 'work',
+        });
+        break;
+      }
+      case 'synthesizing':
+        setStatus('hyds-director', 'working', '종합 보고 작성 중...');
+        addActivity({ id: `ph-synth-${now}`, agentName: '부장', message: '팀장 결과 종합 중...', ts: now, type: 'synthesizing' });
+        break;
+      case 'complete': {
+        const reply = ev.reply || '(빈 응답)';
+        const bubble = reply.length > 120 ? reply.slice(0, 120) + '…' : reply;
+        setStatus('hyds-director', 'debating', bubble);
+        addActivity({ id: `ph-complete-${now}`, agentName: '부장', message: reply, ts: now, type: 'complete' });
+        timeoutsRef.current.push(window.setTimeout(() => setStatus('hyds-director', 'idle', undefined), 10000));
+        break;
+      }
+      case 'error':
+        setStatus('hyds-director', 'idle', '으... 문제가 생겼어요 😢');
+        addActivity({ id: `ph-err-${now}`, agentName: '부장', message: `❌ ${ev.error}`, ts: now, type: 'alert' });
+        timeoutsRef.current.push(window.setTimeout(() => setStatus('hyds-director', 'idle', undefined), 5000));
+        break;
+    }
+  }, [setStatus, addActivity, nameOf]);
 
   const resetAll = useCallback(() => {
     timeoutsRef.current.forEach(t => clearTimeout(t));
@@ -135,5 +208,5 @@ export function useOfficeSimulation() {
     }
   }, [log, setStatus, resetAll]);
 
-  return { agents, activities, trigger, log, setStatus, addActivity, flash };
+  return { agents, activities, trigger, log, setStatus, addActivity, flash, handlePhase };
 }

@@ -1,11 +1,15 @@
 import { useEffect, useRef } from 'react';
 
+export type ActivityType =
+  | 'info' | 'work' | 'alert'
+  | 'planning' | 'delegating' | 'synthesizing' | 'complete';
+
 export interface Activity {
   id: string;
   agentName: string;
   message: string;
   ts: number;
-  type: 'info' | 'work' | 'alert';
+  type: ActivityType;
 }
 
 interface Props {
@@ -23,12 +27,20 @@ export function ActivityFeed({ items }: Props) {
     info: 'border-sky-300 bg-sky-50/70',
     work: 'border-amber-300 bg-amber-50/70',
     alert: 'border-rose-400 bg-rose-50/70 animate-pulse',
+    planning: 'border-yellow-400 bg-yellow-50/80',       // 노랑 — 분석/분해
+    delegating: 'border-orange-400 bg-orange-50/80',     // 주황 — 위임
+    synthesizing: 'border-violet-400 bg-violet-50/80',   // 보라 — 종합
+    complete: 'border-emerald-500 bg-emerald-50/80',     // 초록 — 완료
   }[t]);
 
   const dotFor = (t: Activity['type']) => ({
     info: 'bg-sky-500',
     work: 'bg-amber-500',
     alert: 'bg-rose-500',
+    planning: 'bg-yellow-500',
+    delegating: 'bg-orange-500',
+    synthesizing: 'bg-violet-500',
+    complete: 'bg-emerald-500',
   }[t]);
 
   return (

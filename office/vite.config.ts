@@ -89,7 +89,7 @@ async function loadAgentSystem(agent: string): Promise<string> {
   }
 }
 
-async function callClaude(system: string, text: string): Promise<string> {
+async function callClaude(system: string, text: string, maxTokens = 1024): Promise<string> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error('ANTHROPIC_API_KEY 가 .env에 없습니다');
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
@@ -102,7 +102,7 @@ async function callClaude(system: string, text: string): Promise<string> {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1024,
+      max_tokens: maxTokens,
       ...(system ? { system } : {}),
       messages: [{ role: 'user', content: text }],
     }),
@@ -113,6 +113,30 @@ async function callClaude(system: string, text: string): Promise<string> {
   }
   const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
   return (data.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim();
+}
+
+// 부장이 위임할 수 있는 워커 (director 자신은 제외)
+const WORKER_AGENTS = new Set([...ALLOWED_AGENTS].filter(a => a !== 'hyds-director'));
+
+// 부장 plan JSON 파싱 (코드펜스/잡텍스트 방어)
+function parsePlan(raw: string): { plan: Array<{ agent: string; task: string }>; reasoning: string; answer: string } {
+  let s = (raw || '').trim();
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) s = fence[1].trim();
+  const first = s.indexOf('{');
+  const last = s.lastIndexOf('}');
+  if (first !== -1 && last !== -1) s = s.slice(first, last + 1);
+  try {
+    const obj = JSON.parse(s);
+    const plan = Array.isArray(obj.plan)
+      ? obj.plan
+          .filter((p: any) => p && WORKER_AGENTS.has(p.agent) && typeof p.task === 'string' && p.task.trim())
+          .map((p: any) => ({ agent: p.agent as string, task: String(p.task).trim() }))
+      : [];
+    return { plan, reasoning: String(obj.reasoning || ''), answer: String(obj.answer || '') };
+  } catch {
+    return { plan: [], reasoning: '', answer: raw };
+  }
 }
 
 // HYDS Python 자동화 data/*.json 실시간 노출 + 스크립트 실행 + Claude 채팅 API
@@ -159,19 +183,71 @@ function hydsBackendPlugin(): Plugin {
         });
       });
 
-      // 3) Claude 채팅
+      // 3) Claude 채팅 — 부장 오케스트레이션 (SSE 스트리밍)
       server.middlewares.use('/api/chat', async (req, res) => {
-        if (req.method !== 'POST') return sendJson(res as ServerResponse, 405, { error: 'POST만 허용' });
+        const r = res as ServerResponse;
+        if (req.method !== 'POST') return sendJson(r, 405, { error: 'POST만 허용' });
         const body = await readJsonBody(req);
         const text = typeof body.text === 'string' ? body.text.trim() : '';
-        const agent = typeof body.agent === 'string' ? body.agent : '';
-        if (!text) return sendJson(res as ServerResponse, 400, { error: '메시지가 비었습니다' });
+        if (!text) return sendJson(r, 400, { error: '메시지가 비었습니다' });
+
+        r.statusCode = 200;
+        r.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+        r.setHeader('Cache-Control', 'no-cache, no-transform');
+        r.setHeader('Connection', 'keep-alive');
+        const send = (obj: unknown) => r.write(`data: ${JSON.stringify(obj)}\n\n`);
+
         try {
-          const system = await loadAgentSystem(agent);
-          const reply = await callClaude(system, text);
-          sendJson(res as ServerResponse, 200, { reply, agent });
+          send({ phase: 'planning' });
+
+          // 1) 부장: 작업 분해 (JSON 강제)
+          const directorSystem = await loadAgentSystem('hyds-director');
+          const planInstruction =
+            '\n\n[출력 형식 — 아래 JSON만 출력, 다른 텍스트 금지]\n' +
+            '{"plan":[{"agent":"retreat-planner|retreat-monitor|report-summarizer|content-creator|church-communicator","task":"구체적 작업"}],' +
+            '"reasoning":"분해 이유 한 줄","answer":"plan이 빈 배열일 때만 대표에게 직접 답"}\n' +
+            '규칙: 여러 영역이 얽히면 plan에 여러 개, 단일 작업이면 1개, 단순 조회·인사·잡담이면 plan:[] 이고 answer에 직접 답한다.';
+          const planRaw = await callClaude(directorSystem + planInstruction, text, 900);
+          const parsed = parsePlan(planRaw);
+          send({ phase: 'plan-ready', plan: parsed.plan, reasoning: parsed.reasoning });
+
+          // 단순 조회 → 즉답 (위임 없음)
+          if (parsed.plan.length === 0) {
+            send({ phase: 'complete', reply: parsed.answer || planRaw });
+            return r.end();
+          }
+
+          // 2) 위임 통보
+          send({ phase: 'delegating', plan: parsed.plan });
+
+          // 3) 워커 병렬 실행 — 각 완료 시 worker-done
+          const results = await Promise.all(parsed.plan.map(async item => {
+            try {
+              const sys = await loadAgentSystem(item.agent);
+              const reply = await callClaude(sys, item.task, 1024);
+              send({ phase: 'worker-done', agent: item.agent, task: item.task, result: reply });
+              return { ...item, result: reply };
+            } catch (e) {
+              const msg = `(실패: ${String((e as Error).message || e)})`;
+              send({ phase: 'worker-done', agent: item.agent, task: item.task, result: msg, error: true });
+              return { ...item, result: msg };
+            }
+          }));
+
+          // 4) 부장 종합
+          send({ phase: 'synthesizing' });
+          const synthSystem = directorSystem +
+            '\n\n[종합 지시] 아래는 각 팀장이 제출한 결과다. 대표에게 한 페이지로 종합 보고하라. ' +
+            '결론 먼저, 그다음 팀장별 핵심, 마지막에 다음 액션 제안.';
+          const synthUser = `원 요청: ${text}\n\n` +
+            results.map(w => `### ${w.agent} — ${w.task}\n${w.result}`).join('\n\n');
+          const finalReply = await callClaude(synthSystem, synthUser, 1500);
+
+          send({ phase: 'complete', reply: finalReply });
+          r.end();
         } catch (e) {
-          sendJson(res as ServerResponse, 500, { error: String((e as Error).message || e) });
+          send({ phase: 'error', error: String((e as Error).message || e) });
+          r.end();
         }
       });
     },

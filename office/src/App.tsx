@@ -3,7 +3,7 @@ import { OfficeRoom } from './components/OfficeRoom';
 import { ActivityFeed } from './components/ActivityFeed';
 import { ControlPanel } from './components/ControlPanel';
 import { ChatBox } from './components/ChatBox';
-import { useOfficeSimulation } from './hooks/useOfficeSimulation';
+import { useOfficeSimulation, type PhaseEvent } from './hooks/useOfficeSimulation';
 import { useHydsData, type HydsEvent } from './hooks/useHydsData';
 
 function fmtTime(iso?: string) {
@@ -20,40 +20,34 @@ const CONTROL_MAP: Record<string, { script: string; agent: string; paid: boolean
   'weekly-todos': { script: 'generate_retreat_todos', agent: 'retreat-planner', paid: true, status: 'thinking', msg: '교회별 To-Do 생성...' },
 };
 
-// 채팅 라우팅
-const MENTION: Record<string, string> = {
-  '부장': 'hyds-director',
-  '기획자': 'retreat-planner',
-  '모니터': 'retreat-monitor',
-  '리포터': 'report-summarizer',
-  '크리에이터': 'content-creator',
-  '커뮤니케이터': 'church-communicator',
-};
-const KEYWORD_ROUTES: { agent: string; kws: string[] }[] = [
-  { agent: 'retreat-monitor', kws: ['점검', '진척', '위험', '현황', '체크리스트', 'd-day', 'dday'] },
-  { agent: 'report-summarizer', kws: ['후기', '결산', '회고', '사후', '평가'] },
-  { agent: 'content-creator', kws: ['카드뉴스', '릴스', '홍보', '캡션', '쇼츠', '포스터', '콘텐츠'] },
-  { agent: 'church-communicator', kws: ['답장', '공지', '감사', '카톡', '이메일', '연락', '답변'] },
-  { agent: 'retreat-planner', kws: ['기획', '주제', '강사', '장소', '예산', '프로그램'] },
-];
-
-function routeAgent(text: string): string {
-  const mention = text.match(/@(\S+)/);
-  if (mention) {
-    const name = mention[1];
-    for (const [k, v] of Object.entries(MENTION)) {
-      if (name.startsWith(k)) return v;
+// /api/chat SSE 스트림을 읽어 phase 이벤트마다 onEvent 호출
+async function streamChat(text: string, onEvent: (ev: PhaseEvent) => void) {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok || !res.body) throw new Error(`스트림 연결 실패 (${res.status})`);
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx: number;
+    while ((idx = buf.indexOf('\n\n')) !== -1) {
+      const chunk = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      const line = chunk.split('\n').find(l => l.startsWith('data:'));
+      if (!line) continue;
+      try { onEvent(JSON.parse(line.slice(5).trim()) as PhaseEvent); } catch { /* 부분 청크 무시 */ }
     }
   }
-  const lower = text.toLowerCase();
-  for (const { agent, kws } of KEYWORD_ROUTES) {
-    if (kws.some(k => lower.includes(k))) return agent;
-  }
-  return 'hyds-director'; // 기본 — 부장이 받아서 분해/위임 판단
 }
 
 function App() {
-  const { agents, activities, trigger, log, addActivity, flash, setStatus } = useOfficeSimulation();
+  const { agents, activities, trigger, log, addActivity, flash, setStatus, handlePhase } = useOfficeSimulation();
   const [chatBusy, setChatBusy] = useState(false);
 
   useEffect(() => {
@@ -125,36 +119,24 @@ function App() {
     }
   }, [trigger, setStatus, log, addActivity, flash]);
 
-  // ── 채팅 → sub-agent 라우팅 + Claude 호출 ────────────────────────────────
+  // ── 채팅 → 부장 오케스트레이션 (SSE 스트리밍) ────────────────────────────
   const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || chatBusy) return;
-    const agentId = routeAgent(text);
-    const agentName = agents.find(a => a.id === agentId)?.name || agentId;
+    if (!window.confirm(
+      '복합 요청이면 워커당 추가 Claude 호출이 발생합니다.\n' +
+      '(부장 분석 1 + 워커 최대 5 + 종합 1 = 최대 ~7회, 대략 10~20센트)\n진행할까요?'
+    )) return;
 
     log('나 (서동현)', text, 'info');
     setChatBusy(true);
-    setStatus(agentId, 'thinking', '음... 생각 중');
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ text, agent: agentId }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || `status ${res.status}`);
-      const reply: string = data.reply || '(빈 응답)';
-      const short = reply.length > 120 ? reply.slice(0, 120) + '…' : reply;
-      setStatus(agentId, 'debating', short);
-      addActivity({ id: `chat-${Date.now()}`, agentName, message: reply, ts: Date.now(), type: 'work' });
-      window.setTimeout(() => setStatus(agentId, 'idle', undefined), 9000);
+      await streamChat(text, handlePhase);
     } catch (e) {
-      setStatus(agentId, 'idle', '으... 문제가 생겼어요 😢');
-      addActivity({ id: `chat-err-${Date.now()}`, agentName, message: `❌ 응답 실패: ${String((e as Error).message || e)}`, ts: Date.now(), type: 'alert' });
-      window.setTimeout(() => setStatus(agentId, 'idle', undefined), 5000);
+      handlePhase({ phase: 'error', error: String((e as Error).message || e) });
     } finally {
       setChatBusy(false);
     }
-  }, [chatBusy, agents, log, setStatus, addActivity]);
+  }, [chatBusy, log, handlePhase]);
 
   const lastRun = state.monitorLog[state.monitorLog.length - 1];
   const lastCheckAt = state.realtime?.last_check_at;

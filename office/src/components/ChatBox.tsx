@@ -40,7 +40,7 @@ export function ChatBox({ onSend, disabled }: Props) {
         </button>
       </div>
       <div className="text-[10px] text-amber-600/70 korean mt-1.5">
-        기본은 @부장 · @기획자 @모니터 @리포터 @크리에이터 @커뮤니케이터 로 직접 지목 · 키워드 자동 라우팅
+        부장이 요청을 분석해 팀장들에게 자동 위임합니다 · 복합 요청은 여러 팀장이 병렬로 일해요
       </div>
     </div>
   );
