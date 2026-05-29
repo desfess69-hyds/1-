@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hyds.archive</string>
+    <key>WorkingDirectory</key>
+    <string>__HYDS_PATH__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HYDS_PATH__/venv/bin/python</string>
+        <string>execution/archive_to_notion.py</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>__HYDS_PATH__/.tmp/archive.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HYDS_PATH__/.tmp/archive.err.log</string>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

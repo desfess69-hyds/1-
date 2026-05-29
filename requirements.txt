@@ -9,3 +9,13 @@ python-dotenv>=1.0.0
 
 # HTTP 요청 (인스타그램 API 등)
 requests>=2.31.0
+
+# MySQL 드라이버 (HYDS Ministry App DB 연결용)
+pymysql>=1.1.0
+cryptography>=42.0.0
+
+# 노션 자동 정리
+notion-client>=2.2.0
+
+# Word 문서 생성
+python-docx>=1.1.0
