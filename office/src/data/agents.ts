@@ -19,7 +19,7 @@ export const initialAgents: Agent[] = [
     role: 'retreat-planner',
     color: '#fde68a',  // 부드러운 살구
     hair: '#b45309',
-    position: { x: 120, y: 200 },
+    position: { x: 110, y: 190 },
     status: 'idle',
     trigger: 'manual',
   },
@@ -29,7 +29,7 @@ export const initialAgents: Agent[] = [
     role: 'retreat-monitor',
     color: '#fecaca',  // 산호
     hair: '#b91c1c',
-    position: { x: 320, y: 200 },
+    position: { x: 300, y: 190 },
     status: 'idle',
     trigger: 'daily-monitor',
   },
@@ -39,7 +39,7 @@ export const initialAgents: Agent[] = [
     role: 'report-summarizer',
     color: '#bbf7d0',  // 민트
     hair: '#15803d',
-    position: { x: 520, y: 200 },
+    position: { x: 490, y: 190 },
     status: 'idle',
     trigger: 'manual',
   },
@@ -49,7 +49,17 @@ export const initialAgents: Agent[] = [
     role: 'content-creator',
     color: '#ddd6fe',  // 라일락
     hair: '#6d28d9',
-    position: { x: 220, y: 380 },
+    position: { x: 110, y: 380 },
+    status: 'idle',
+    trigger: 'manual',
+  },
+  {
+    id: 'hyds-director',
+    name: '부장',
+    role: 'hyds-director',
+    color: '#fcd34d',  // 금색 (총괄)
+    hair: '#78350f',
+    position: { x: 300, y: 380 },
     status: 'idle',
     trigger: 'manual',
   },
@@ -59,7 +69,7 @@ export const initialAgents: Agent[] = [
     role: 'church-communicator',
     color: '#bfdbfe',  // 하늘
     hair: '#1e40af',
-    position: { x: 420, y: 380 },
+    position: { x: 490, y: 380 },
     status: 'idle',
     trigger: 'manual',
   },

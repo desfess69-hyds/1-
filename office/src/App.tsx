@@ -22,6 +22,7 @@ const CONTROL_MAP: Record<string, { script: string; agent: string; paid: boolean
 
 // 채팅 라우팅
 const MENTION: Record<string, string> = {
+  '부장': 'hyds-director',
   '기획자': 'retreat-planner',
   '모니터': 'retreat-monitor',
   '리포터': 'report-summarizer',
@@ -48,7 +49,7 @@ function routeAgent(text: string): string {
   for (const { agent, kws } of KEYWORD_ROUTES) {
     if (kws.some(k => lower.includes(k))) return agent;
   }
-  return 'retreat-planner'; // 기본
+  return 'hyds-director'; // 기본 — 부장이 받아서 분해/위임 판단
 }
 
 function App() {

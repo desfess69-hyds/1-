@@ -16,6 +16,7 @@ const PYTHON = path.join(ROOT, 'venv', 'bin', 'python');
 const ALLOWED_SCRIPTS = new Set(['daily_monitor', 'realtime_check', 'generate_retreat_todos']);
 // /api/chat 에서 시스템 프롬프트로 쓸 수 있는 에이전트 (화이트리스트 — 경로 traversal 방지)
 const ALLOWED_AGENTS = new Set([
+  'hyds-director',
   'retreat-planner', 'retreat-monitor', 'report-summarizer', 'content-creator', 'church-communicator',
 ]);
 
