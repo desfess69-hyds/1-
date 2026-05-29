@@ -68,7 +68,7 @@ async function streamChat(text: string, sessionId: string, onEvent: (ev: PhaseEv
 }
 
 function App() {
-  const { agents, activities, meeting, trigger, log, addActivity, clearActivities, flash, setStatus, handlePhase } = useOfficeSimulation();
+  const { agents, activities, meetings, trigger, log, addActivity, clearActivities, flash, setStatus, handlePhase } = useOfficeSimulation();
   const [chatBusy, setChatBusy] = useState(false);
   const [sessionId, setSessionId] = useState<string>(() => {
     const existing = sessionStorage.getItem(SESSION_KEY);
@@ -154,8 +154,9 @@ function App() {
   const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || chatBusy) return;
     if (!window.confirm(
-      '복합 요청이면 워커당 추가 Claude 호출이 발생합니다.\n' +
-      '(부장 분석 1 + 워커 최대 5 + 종합 1 = 최대 ~7회, 대략 10~20센트)\n진행할까요?'
+      '복합 요청이면 위임마다 추가 Claude 호출이 발생합니다.\n' +
+      '(부장 분석 1 + 워커들 + 종합 1. 미디어 작업은 본부장이 다시 3팀장에게 재위임해\n' +
+      ' 호출이 더 늘 수 있습니다 — 대략 10~30센트)\n진행할까요?'
     )) return;
 
     addActivity({ id: `user-${Date.now()}`, agentName: '나 (서동현)', message: text, ts: Date.now(), type: 'info', tone });
@@ -202,7 +203,7 @@ function App() {
       <header className="mb-6 flex items-center justify-between max-w-7xl mx-auto">
         <div>
           <h1 className="text-2xl korean font-bold text-[#4a2c1a]">🏢 HYDS Office</h1>
-          <p className="text-amber-700 text-xs mt-1 korean">5명의 AI 에이전트가 일하는 작은 사무실 · 실데이터 + 실행 연동</p>
+          <p className="text-amber-700 text-xs mt-1 korean">9명의 AI 에이전트 · 부장 + 수련회 4팀장 + 미디어 본부(본부장·3팀장) · 실데이터 연동</p>
         </div>
         <div className="text-right space-y-1">
           <div className="inline-flex items-center gap-2 bg-white/70 px-3 py-1.5 rounded-full shadow-sm">
@@ -222,8 +223,7 @@ function App() {
         <div className="col-span-2 space-y-6">
           <OfficeRoom
             agents={agents}
-            meetingActive={meeting.active}
-            agenda={meeting.agenda}
+            meetings={meetings}
             onAgentClick={id => {
               const a = agents.find(x => x.id === id);
               if (a) log(a.name, `클릭됨 — 현재 ${a.status}`, 'info');

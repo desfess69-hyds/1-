@@ -38,7 +38,7 @@ model: sonnet
 ## 협력
 
 - 점검·체크리스트 작업 → **retreat-monitor** 에이전트로 인계.
-- 홍보물·카드뉴스 → **content-creator** 에이전트로 인계.
+- 홍보물·카드뉴스·릴스·캠페인 → **media-director**(미디어 본부장)에게 인계 → 본부장이 concept-planner/scriptwriter/media-producer에 분배.
 - 교회와의 답변 작성 → **church-communicator** 에이전트로 인계.
 
 ## 마지막 단계

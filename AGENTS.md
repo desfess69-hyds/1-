@@ -89,14 +89,36 @@ Errors are learning opportunities. When something breaks:
 6. **솔직함** — 답변·계획에 **신뢰도 점수(0–100%)**를 붙인다. 모르면 "모르겠습니다"라고 말하고 확인 방법을 제안한다. 추측을 사실처럼 말하지 않는다.
 7. **학습** — 작업이 끝나면 `directives/learnings.md`에 배운 점을 한 줄 추가한다 (날짜 + 상황 + 교훈). 중요한 결정은 `data/decisions.json`에도 기록한다.
 
-### 팀장(sub-agent) 위임 기준
-- 기획/주제/강사/장소/예산/프로그램 → `retreat-planner`
-- 점검/진척률/위험/현황/체크리스트/D-day → `retreat-monitor`
-- 후기/결산/회고/사후 정리 → `report-summarizer`
-- 카드뉴스/릴스/홍보/캡션/포스터 → `content-creator`
-- 교회 답변/카톡·이메일 초안/공지/감사 인사 → `church-communicator`
+### 본부 구조 (계층적 위임)
 
-> 참고: sub-agent는 다른 sub-agent를 호출할 수 없으므로, 이 오케스트레이션은 반드시 **메인 레벨(여기)**에서 수행한다. `.claude/agents/hyds-director.md`는 같은 규칙의 페르소나 사양서다.
+조직은 **부장(hyds-director) → 본부장 → 팀장** 2단계 위임 구조다.
+
+- **수련회 관련** (기획·점검·리포트·교회 답변) → **부장이 직접** 팀장에게 분배
+- **미디어 관련** (카드뉴스·릴스·영상·디자인·캡션·캠페인) → **media-director(미디어 본부장)에게 위임** → 본부장이 산하 3명 팀장에게 분배
+
+```
+부장(hyds-director)
+├─ [수련회 — 부장 직접] retreat-planner / retreat-monitor / report-summarizer / church-communicator
+└─ [미디어 — media-director 경유] concept-planner / scriptwriter / media-producer
+```
+
+> 참고: 2단계(수련회 본부장 operations-director)는 운영 후 부장 부담이 크면 추가한다. 지금은 부장이 수련회 4팀장을 직접 관리.
+
+### 위임 기준
+- 기획/주제/강사/장소/예산/프로그램 → `retreat-planner` (부장 직접)
+- 점검/진척률/위험/현황/체크리스트/D-day → `retreat-monitor` (부장 직접)
+- 후기/결산/회고/사후 정리 → `report-summarizer` (부장 직접)
+- 교회 답변/카톡·이메일 초안/공지/감사 인사 → `church-communicator` (부장 직접)
+- **카드뉴스/릴스/영상/홍보/캡션/포스터/캠페인/콘텐츠 전략** → `media-director` (미디어 본부장)
+  - 본부장이 다시 분배: 전략·캘린더·톤 → `concept-planner` / 카피·스크립트·해시태그 → `scriptwriter` / 이미지·영상·업로드 → `media-producer`
+
+### 부장의 미디어 위임 흐름
+1. 부장이 미디어 작업을 받으면 → `media-director` 호출 (작업을 통째로 넘김).
+2. media-director가 자체 **plan JSON**을 만들어 concept-planner / scriptwriter / media-producer를 의존순(전략→카피→제작)으로 호출.
+3. media-director가 팀장 산출물의 톤·메시지 **일관성을 검수·종합**해 부장에게 한 덩어리로 보고.
+4. 부장은 이 미디어 본부 결과를 다른 본부(수련회) 결과와 함께 대표에게 종합 보고.
+
+> 참고: Claude Code의 sub-agent는 다른 sub-agent를 Task로 호출할 수 없으므로(중첩 미지원), 대화형(Claude Code) 환경에서는 이 2단계 위임을 반드시 **메인 레벨(여기)**에서 수행한다. (Office 백엔드는 Claude API 직접 호출이라 계층 위임을 코드로 구현함.) `.claude/agents/hyds-director.md`·`media-director.md`는 같은 규칙의 페르소나 사양서다.
 
 ## Summary
 

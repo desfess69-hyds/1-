@@ -14,10 +14,18 @@ const PYTHON = path.join(ROOT, 'venv', 'bin', 'python');
 
 // /api/run 으로 실행 허용된 스크립트 (화이트리스트 — 임의 파일 실행 방지)
 const ALLOWED_SCRIPTS = new Set(['daily_monitor', 'realtime_check', 'generate_retreat_todos']);
+// 부장(hyds-director)이 직접 위임할 수 있는 워커 (수련회 4팀장 + 미디어 본부장)
+const DIRECTOR_WORKERS = new Set([
+  'retreat-planner', 'retreat-monitor', 'report-summarizer', 'church-communicator',
+  'media-director',
+]);
+// 미디어 본부장(media-director)이 다시 위임하는 팀장 3명
+const MEDIA_WORKERS = new Set(['concept-planner', 'scriptwriter', 'media-producer']);
 // /api/chat 에서 시스템 프롬프트로 쓸 수 있는 에이전트 (화이트리스트 — 경로 traversal 방지)
 const ALLOWED_AGENTS = new Set([
   'hyds-director',
-  'retreat-planner', 'retreat-monitor', 'report-summarizer', 'content-creator', 'church-communicator',
+  ...DIRECTOR_WORKERS,
+  ...MEDIA_WORKERS,
 ]);
 
 // ── 부모 폴더 .env 로드 (dotenv 대체 — 의존성 없이 동일 동작) ──────────────────
@@ -115,11 +123,8 @@ async function callClaude(system: string, text: string, maxTokens = 1024): Promi
   return (data.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim();
 }
 
-// 부장이 위임할 수 있는 워커 (director 자신은 제외)
-const WORKER_AGENTS = new Set([...ALLOWED_AGENTS].filter(a => a !== 'hyds-director'));
-
-// 부장 plan JSON 파싱 (코드펜스/잡텍스트 방어)
-function parsePlan(raw: string): { plan: Array<{ agent: string; task: string }>; reasoning: string; answer: string } {
+// plan JSON 파싱 (코드펜스/잡텍스트 방어). allowed: 그 단계에서 위임 가능한 에이전트 집합
+function parsePlan(raw: string, allowed: Set<string>): { plan: Array<{ agent: string; task: string }>; reasoning: string; answer: string } {
   let s = (raw || '').trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) s = fence[1].trim();
@@ -130,13 +135,55 @@ function parsePlan(raw: string): { plan: Array<{ agent: string; task: string }>;
     const obj = JSON.parse(s);
     const plan = Array.isArray(obj.plan)
       ? obj.plan
-          .filter((p: any) => p && WORKER_AGENTS.has(p.agent) && typeof p.task === 'string' && p.task.trim())
+          .filter((p: any) => p && allowed.has(p.agent) && typeof p.task === 'string' && p.task.trim())
           .map((p: any) => ({ agent: p.agent as string, task: String(p.task).trim() }))
       : [];
     return { plan, reasoning: String(obj.reasoning || ''), answer: String(obj.answer || '') };
   } catch {
     return { plan: [], reasoning: '', answer: raw };
   }
+}
+
+// ── 미디어 본부 (media-director) 2단계 위임 ────────────────────────────────
+// 부장이 'media-director'에게 위임한 작업을, 본부장이 다시 concept/script/producer에
+// 분배·종합한다. 반환값(종합 결과)이 부장의 worker-done.result 가 된다.
+async function runMediaHQ(task: string, send: (obj: unknown) => void): Promise<string> {
+  const dirSystem = await loadAgentSystem('media-director');
+  const subInstruction =
+    '\n\n[출력 형식 — 아래 JSON만 출력, 다른 텍스트 금지]\n' +
+    '{"plan":[{"agent":"concept-planner|scriptwriter|media-producer","task":"구체적 작업(맥락을 충분히 녹여 자기완결적으로)"}],' +
+    '"reasoning":"분배 이유 한 줄","answer":"plan이 빈 배열일 때만 부장에게 직접 답"}\n' +
+    '규칙: 의존순서 concept-planner(전략·톤) → scriptwriter(카피) → media-producer(제작)를 지킨다. ' +
+    '캠페인·신규 콘텐츠면 여러 개, 카피만/이미지만이면 1개, 단순 질의면 plan:[] 이고 answer에 직접 답한다.';
+  const raw = await callClaude(dirSystem + subInstruction, task, 900);
+  const sub = parsePlan(raw, MEDIA_WORKERS);
+
+  // 본부장이 직접 답하는 경우 (위임 불필요)
+  if (sub.plan.length === 0) return sub.answer || raw;
+
+  // 본부장이 자기 회의실로 팀장 소집
+  send({ phase: 'sub-delegating', director: 'media-director', plan: sub.plan, reasoning: sub.reasoning });
+
+  const subResults = await Promise.all(sub.plan.map(async item => {
+    try {
+      const sys = await loadAgentSystem(item.agent);
+      const reply = await callClaude(sys, item.task, 1024);
+      send({ phase: 'sub-worker-done', director: 'media-director', agent: item.agent, task: item.task, result: reply });
+      return { ...item, result: reply };
+    } catch (e) {
+      const msg = `(실패: ${String((e as Error).message || e)})`;
+      send({ phase: 'sub-worker-done', director: 'media-director', agent: item.agent, task: item.task, result: msg, error: true });
+      return { ...item, result: msg };
+    }
+  }));
+
+  // 본부장 종합 (톤·메시지 일관성 검수)
+  const synthSystem = dirSystem +
+    '\n\n[종합 지시] 아래는 미디어 본부 팀장들의 결과다. 톤·핵심 메시지·디자인 규칙의 일관성을 검수하고, ' +
+    '부장에게 한 덩어리로 종합 보고하라. 결론 먼저, 그다음 팀장별 핵심, 마지막에 다음 액션 제안.';
+  const synthUser = `미디어 본부 요청: ${task}\n\n` +
+    subResults.map(w => `### ${w.agent} — ${w.task}\n${w.result}`).join('\n\n');
+  return await callClaude(synthSystem, synthUser, 1400);
 }
 
 // ── 대화 세션 (인메모리, 서버 재시작 시 초기화) ────────────────────────────────
@@ -266,12 +313,14 @@ function hydsBackendPlugin(): Plugin {
           const directorSystem = await loadAgentSystem('hyds-director');
           const planInstruction =
             '\n\n[출력 형식 — 아래 JSON만 출력, 다른 텍스트 금지]\n' +
-            '{"plan":[{"agent":"retreat-planner|retreat-monitor|report-summarizer|content-creator|church-communicator","task":"구체적 작업(이전 대화 맥락을 task에 충분히 녹여 자기완결적으로)"}],' +
+            '{"plan":[{"agent":"retreat-planner|retreat-monitor|report-summarizer|church-communicator|media-director","task":"구체적 작업(이전 대화 맥락을 task에 충분히 녹여 자기완결적으로)"}],' +
             '"reasoning":"분해 이유 한 줄","answer":"plan이 빈 배열일 때만 대표에게 직접 답"}\n' +
-            '규칙: 여러 영역이 얽히면 plan에 여러 개, 단일 작업이면 1개, 단순 조회·인사·되묻기면 plan:[] 이고 answer에 직접 답한다. 정보가 부족하면 plan:[] 로 두고 answer에 필요한 정보를 되물어라.';
+            '규칙: 수련회(기획·점검·리포트·교회답변)는 해당 팀장에게 직접 위임한다. ' +
+            '미디어(카드뉴스·릴스·영상·홍보·캡션·캠페인·콘텐츠 전략)는 쪼개지 말고 "media-director"에게 통째로 한 건으로 위임한다(본부장이 산하 3팀장에 재분배). ' +
+            '여러 영역이 얽히면 plan에 여러 개, 단일 작업이면 1개, 단순 조회·인사·되묻기면 plan:[] 이고 answer에 직접 답한다. 정보가 부족하면 plan:[] 로 두고 answer에 필요한 정보를 되물어라.';
           const planMsgs: ChatMsg[] = [...session.messages, { role: 'user', content: text }];
           const planRaw = await callClaudeMessages(directorSystem + planInstruction, planMsgs, 900);
-          const parsed = parsePlan(planRaw);
+          const parsed = parsePlan(planRaw, DIRECTOR_WORKERS);
           send({ phase: 'plan-ready', plan: parsed.plan, reasoning: parsed.reasoning });
 
           let finalReply: string;
@@ -285,10 +334,12 @@ function hydsBackendPlugin(): Plugin {
             send({ phase: 'delegating', plan: parsed.plan });
 
             // 3) 워커 병렬 실행 (stateless) — 각 완료 시 worker-done
+            //    media-director 는 leaf 가 아니라 본부 2단계 위임(runMediaHQ)으로 처리
             const results = await Promise.all(parsed.plan.map(async item => {
               try {
-                const sys = await loadAgentSystem(item.agent);
-                const reply = await callClaude(sys, item.task, 1024);
+                const reply = item.agent === 'media-director'
+                  ? await runMediaHQ(item.task, send)
+                  : await callClaude(await loadAgentSystem(item.agent), item.task, 1024);
                 send({ phase: 'worker-done', agent: item.agent, task: item.task, result: reply });
                 return { ...item, result: reply };
               } catch (e) {

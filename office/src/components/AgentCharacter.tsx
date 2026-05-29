@@ -40,7 +40,7 @@ export function AgentCharacter({ agent, onClick }: Props) {
   // 회의실에 있고(이동/작업 중) → 회의실 자리, 아니면 평상시 자리
   const useMeetingPos = agent.inMeeting && (agent.status === 'moving' || agent.status === 'working');
   const pos = useMeetingPos ? agent.meetingPosition : agent.position;
-  const isChairing = agent.role === 'hyds-director' && agent.inMeeting;
+  const isChairing = !!agent.isChair && agent.inMeeting;
 
   return (
     <div

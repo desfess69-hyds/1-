@@ -7,8 +7,8 @@ export function ControlPanel({ onTrigger }: Props) {
     { id: 'daily-monitor', label: '🌅 매일 모니터', desc: 'retreat-monitor 깨우기', color: 'from-amber-100 to-amber-200' },
     { id: 'realtime', label: '⚡ 실시간 체크', desc: '5분 주기 체크', color: 'from-rose-100 to-rose-200' },
     { id: 'weekly-todos', label: '📋 주간 To-Do', desc: '월요일 09:30', color: 'from-emerald-100 to-emerald-200' },
-    { id: 'debate', label: '💬 토론 시뮬', desc: '두 명이 대화', color: 'from-violet-100 to-violet-200' },
-    { id: 'card-news', label: '🎨 카드뉴스', desc: 'content-creator 작업', color: 'from-pink-100 to-pink-200' },
+    { id: 'debate', label: '💬 토론 시뮬', desc: '미디어팀 톤 회의', color: 'from-violet-100 to-violet-200' },
+    { id: 'card-news', label: '🎨 카드뉴스', desc: 'media-producer 작업', color: 'from-pink-100 to-pink-200' },
     { id: 'reset', label: '🔄 리셋', desc: '전원 idle 복귀', color: 'from-gray-100 to-gray-200' },
   ];
 
