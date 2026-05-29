@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ven_001",
+    "name": "팀수양관",
+    "location": "경기도 양평",
+    "capacity": 80,
+    "price_per_night": 35000,
+    "notes": "와이파이 약함, 식당 좋음"
+  }
+]

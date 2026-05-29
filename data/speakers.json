@@ -1,0 +1,10 @@
+[
+  {
+    "id": "spk_001",
+    "name": "서동현",
+    "specialty": ["청년부", "기도"],
+    "fee_per_session": 300000,
+    "phone": "010-XXXX-XXXX",
+    "notes": "실제로 본 인상"
+  }
+]

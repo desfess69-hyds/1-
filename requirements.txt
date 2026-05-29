@@ -1,0 +1,11 @@
+# AI
+anthropic>=0.40.0
+
+# 이미지 생성 (카드뉴스용)
+Pillow>=10.0.0
+
+# 환경 변수 로드
+python-dotenv>=1.0.0
+
+# HTTP 요청 (인스타그램 API 등)
+requests>=2.31.0
