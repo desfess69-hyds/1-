@@ -20,7 +20,7 @@ except ImportError:
 
 PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT = PROJECT_ROOT / ".tmp" / "dossiers" / "HYDS_팀장_종합_체크리스트.docx"
-KOREAN_FONT = "Apple SD Gothic Neo"  # Mac 기본. 없으면 Word가 알아서 fallback.
+KOREAN_FONT = "Malgun Gothic"  # Windows·Mac 둘 다 폴백 안전  # Mac 기본. 없으면 Word가 알아서 fallback.
 
 
 def set_korean_font(run, font_name=KOREAN_FONT):
@@ -32,8 +32,10 @@ def set_korean_font(run, font_name=KOREAN_FONT):
         rFonts = OxmlElement("w:rFonts")
         rPr.append(rFonts)
     rFonts.set(qn("w:eastAsia"), font_name)
-    rFonts.set(qn("w:ascii"), font_name)
-    rFonts.set(qn("w:hAnsi"), font_name)
+    rFonts.set(qn("w:cs"), font_name)
+    # ascii/hAnsi는 영문 폰트로 두면 영문 부분이 깔끔 (Word가 한글은 eastAsia로 처리)
+    rFonts.set(qn("w:ascii"), "Calibri")
+    rFonts.set(qn("w:hAnsi"), "Calibri")
 
 
 def add_heading(doc, text, level=1):

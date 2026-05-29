@@ -24,7 +24,7 @@ from execution.claude_client import ask_claude
 
 PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT = PROJECT_ROOT / ".tmp" / "dossiers" / f"HYDS_수련회별_TODO_{datetime.now().strftime('%Y%m%d')}.docx"
-KOREAN_FONT = "Apple SD Gothic Neo"
+KOREAN_FONT = "Malgun Gothic"  # Windows·Mac 둘 다 폴백 안전
 
 # ──────────────────────────────────────────────────────────
 # 마스터 체크리스트 (D-day별로 카테고리화)
@@ -204,8 +204,9 @@ def render_docx(analyses: list[dict]):
             rFonts = OxmlElement("w:rFonts")
             rPr.append(rFonts)
         rFonts.set(qn("w:eastAsia"), font)
-        rFonts.set(qn("w:ascii"), font)
-        rFonts.set(qn("w:hAnsi"), font)
+        rFonts.set(qn("w:cs"), font)
+        rFonts.set(qn("w:ascii"), "Calibri")
+        rFonts.set(qn("w:hAnsi"), "Calibri")
 
     doc = Document()
     for section in doc.sections:
