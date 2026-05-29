@@ -21,6 +21,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from execution.db_client import list_active_retreats, get_retreat_full
 from execution.claude_client import ask_claude
+from execution.utils import read_json, write_json
 
 PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT = PROJECT_ROOT / ".tmp" / "dossiers" / f"HYDS_수련회별_TODO_{datetime.now().strftime('%Y%m%d')}.docx"
@@ -396,11 +397,29 @@ def main():
     print("\n📝 Word 문서 생성...")
     render_docx(analyses)
 
+    notified = False
     if not args.no_send:
         print("📤 텔레그램 발송...")
         send_via_telegram()
+        notified = True
     else:
         print(f"\n파일만 생성됨: {OUTPUT}")
+
+    # 로그 기록 (office 대시보드 실시간 표시 + 실행 이력)
+    wlog = read_json("data/weekly_todos_log.json")
+    if not isinstance(wlog, list):
+        wlog = []
+    wlog.append({
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "ran_at": datetime.now().isoformat(),
+        "retreats_total": len(analyses),
+        "total_todos": sum(len(a["todo_now"]) for a in analyses),
+        "notified": notified,
+        "report_path": str(OUTPUT.relative_to(PROJECT_ROOT)),
+    })
+    wlog = wlog[-90:]  # 최근 90회만 보관
+    write_json("data/weekly_todos_log.json", wlog)
+    print("📝 로그 기록 완료 (data/weekly_todos_log.json)")
 
 
 if __name__ == "__main__":

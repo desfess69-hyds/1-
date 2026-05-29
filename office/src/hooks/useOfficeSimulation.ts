@@ -20,9 +20,24 @@ export function useOfficeSimulation() {
     ].slice(0, 50));
   }, []);
 
+  // 실제 데이터에서 만든 활동(고유 id + 실제 timestamp)을 중복 없이 병합.
+  const addActivity = useCallback((a: Activity) => {
+    setActivities(prev => {
+      if (prev.some(p => p.id === a.id)) return prev;
+      return [a, ...prev].sort((x, y) => y.ts - x.ts).slice(0, 50);
+    });
+  }, []);
+
   const setStatus = useCallback((id: string, status: AgentStatus, message?: string) => {
     setAgents(prev => prev.map(a => a.id === id ? { ...a, status, message } : a));
   }, []);
+
+  // 잠깐 상태를 바꿨다가 일정 시간 뒤 idle 로 복귀 (실제 자동화 이벤트 가시화용).
+  const flash = useCallback((id: string, status: AgentStatus, message?: string, ms = 4000) => {
+    setStatus(id, status, message);
+    const t = window.setTimeout(() => setStatus(id, 'idle', undefined), ms);
+    timeoutsRef.current.push(t);
+  }, [setStatus]);
 
   const resetAll = useCallback(() => {
     timeoutsRef.current.forEach(t => clearTimeout(t));
@@ -120,5 +135,5 @@ export function useOfficeSimulation() {
     }
   }, [log, setStatus, resetAll]);
 
-  return { agents, activities, trigger, log };
+  return { agents, activities, trigger, log, setStatus, addActivity, flash };
 }
