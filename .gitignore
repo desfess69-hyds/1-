@@ -14,6 +14,12 @@ token.json
 *.tmp
 .DS_Store
 
+# 런타임 로그/상태 (자동화가 갱신 — 추적 제외, 로컬에서만 누적)
+data/monitor_log.json
+data/realtime_state.json
+data/weekly_todos_log.json
+data/notion_archive_state.json
+
 # Python
 __pycache__/
 *.py[cod]
