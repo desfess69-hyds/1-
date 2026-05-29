@@ -4,11 +4,12 @@ export interface Agent {
   id: string;
   name: string;
   role: string;
-  color: string;       // sprite 색
+  color: string;      // 몸통 색
+  hair: string;       // 머리/모자 색
   position: { x: number; y: number };
   status: AgentStatus;
   message?: string;
-  trigger?: string;    // 자동화로 깨우는 트리거 키
+  trigger?: string;
 }
 
 export const initialAgents: Agent[] = [
@@ -16,7 +17,8 @@ export const initialAgents: Agent[] = [
     id: 'retreat-planner',
     name: '기획자',
     role: 'retreat-planner',
-    color: '#fbbf24', // amber
+    color: '#fde68a',  // 부드러운 살구
+    hair: '#b45309',
     position: { x: 120, y: 200 },
     status: 'idle',
     trigger: 'manual',
@@ -25,7 +27,8 @@ export const initialAgents: Agent[] = [
     id: 'retreat-monitor',
     name: '모니터',
     role: 'retreat-monitor',
-    color: '#f87171', // red
+    color: '#fecaca',  // 산호
+    hair: '#b91c1c',
     position: { x: 320, y: 200 },
     status: 'idle',
     trigger: 'daily-monitor',
@@ -34,7 +37,8 @@ export const initialAgents: Agent[] = [
     id: 'report-summarizer',
     name: '리포터',
     role: 'report-summarizer',
-    color: '#34d399', // emerald
+    color: '#bbf7d0',  // 민트
+    hair: '#15803d',
     position: { x: 520, y: 200 },
     status: 'idle',
     trigger: 'manual',
@@ -43,7 +47,8 @@ export const initialAgents: Agent[] = [
     id: 'content-creator',
     name: '크리에이터',
     role: 'content-creator',
-    color: '#a78bfa', // violet
+    color: '#ddd6fe',  // 라일락
+    hair: '#6d28d9',
     position: { x: 220, y: 380 },
     status: 'idle',
     trigger: 'manual',
@@ -52,7 +57,8 @@ export const initialAgents: Agent[] = [
     id: 'church-communicator',
     name: '커뮤니케이터',
     role: 'church-communicator',
-    color: '#60a5fa', // blue
+    color: '#bfdbfe',  // 하늘
+    hair: '#1e40af',
     position: { x: 420, y: 380 },
     status: 'idle',
     trigger: 'manual',

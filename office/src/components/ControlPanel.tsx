@@ -4,26 +4,28 @@ interface Props {
 
 export function ControlPanel({ onTrigger }: Props) {
   const buttons = [
-    { id: 'daily-monitor', label: '🌅 매일 모니터', desc: 'retreat-monitor 깨우기' },
-    { id: 'realtime', label: '⚡ 실시간 체크', desc: 'realtime checker 5분 주기' },
-    { id: 'weekly-todos', label: '📋 주간 To-Do', desc: '월요일 09:30' },
-    { id: 'debate', label: '💬 토론 시뮬', desc: '두 명이 대화' },
-    { id: 'card-news', label: '🎨 카드뉴스', desc: 'content-creator 작업' },
-    { id: 'reset', label: '🔄 리셋', desc: '전원 idle 복귀' },
+    { id: 'daily-monitor', label: '🌅 매일 모니터', desc: 'retreat-monitor 깨우기', color: 'from-amber-100 to-amber-200' },
+    { id: 'realtime', label: '⚡ 실시간 체크', desc: '5분 주기 체크', color: 'from-rose-100 to-rose-200' },
+    { id: 'weekly-todos', label: '📋 주간 To-Do', desc: '월요일 09:30', color: 'from-emerald-100 to-emerald-200' },
+    { id: 'debate', label: '💬 토론 시뮬', desc: '두 명이 대화', color: 'from-violet-100 to-violet-200' },
+    { id: 'card-news', label: '🎨 카드뉴스', desc: 'content-creator 작업', color: 'from-pink-100 to-pink-200' },
+    { id: 'reset', label: '🔄 리셋', desc: '전원 idle 복귀', color: 'from-gray-100 to-gray-200' },
   ];
 
   return (
-    <div className="bg-black/40 border-2 border-office-wall rounded-lg p-4">
-      <div className="text-yellow-200 text-[10px] mb-3 korean">🎮 컨트롤 패널</div>
-      <div className="grid grid-cols-3 gap-2">
+    <div className="bg-white/60 backdrop-blur-sm border-2 border-amber-200 rounded-2xl p-4 shadow-md">
+      <div className="text-amber-900 text-sm mb-3 korean font-bold flex items-center gap-2">
+        <span>🎮</span> 컨트롤 패널
+      </div>
+      <div className="grid grid-cols-3 gap-3">
         {buttons.map(b => (
           <button
             key={b.id}
             onClick={() => onTrigger(b.id)}
-            className="bg-office-wall hover:bg-blue-900 transition-colors p-2 rounded border border-gray-600 text-left"
+            className={`bg-gradient-to-br ${b.color} hover:scale-105 active:scale-95 transition-all p-3 rounded-xl border border-white/80 text-left shadow-sm hover:shadow-md`}
           >
-            <div className="text-[10px] text-yellow-200 korean">{b.label}</div>
-            <div className="text-[8px] text-gray-400 korean mt-1">{b.desc}</div>
+            <div className="text-sm text-amber-900 korean font-semibold">{b.label}</div>
+            <div className="text-[10px] text-amber-700 korean mt-1">{b.desc}</div>
           </button>
         ))}
       </div>
