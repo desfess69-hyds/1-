@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { OfficeRoom } from './components/OfficeRoom';
 import { ActivityFeed } from './components/ActivityFeed';
 import { ControlPanel } from './components/ControlPanel';
@@ -20,12 +20,33 @@ const CONTROL_MAP: Record<string, { script: string; agent: string; paid: boolean
   'weekly-todos': { script: 'generate_retreat_todos', agent: 'retreat-planner', paid: true, status: 'thinking', msg: '교회별 To-Do 생성...' },
 };
 
+const DEFAULT_PLACEHOLDER = "에이전트에게 명령하세요... 예: '평택교회 카드뉴스 8장 만들어줘'";
+const SESSION_KEY = 'hyds_chat_session_id';
+const TONE_PALETTE = ['#fb923c', '#60a5fa', '#34d399', '#a78bfa', '#f472b6', '#fbbf24'];
+
+function newSessionId(): string {
+  const c = (globalThis.crypto as Crypto | undefined);
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function toneFor(sessionId: string): string {
+  let h = 0;
+  for (const ch of sessionId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TONE_PALETTE[h % TONE_PALETTE.length];
+}
+
+// 후속 질문(되묻기)으로 보이면 placeholder를 답변 모드로
+function looksLikeQuestion(reply: string): boolean {
+  return /[?？]/.test(reply) || /(필요|알려|어떤|무엇|몇 명|언제|얼마|주세요|있나요|할까요)/.test(reply);
+}
+
 // /api/chat SSE 스트림을 읽어 phase 이벤트마다 onEvent 호출
-async function streamChat(text: string, onEvent: (ev: PhaseEvent) => void) {
+async function streamChat(text: string, sessionId: string, onEvent: (ev: PhaseEvent) => void) {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, sessionId }),
   });
   if (!res.ok || !res.body) throw new Error(`스트림 연결 실패 (${res.status})`);
   const reader = res.body.getReader();
@@ -47,8 +68,18 @@ async function streamChat(text: string, onEvent: (ev: PhaseEvent) => void) {
 }
 
 function App() {
-  const { agents, activities, meeting, trigger, log, addActivity, flash, setStatus, handlePhase } = useOfficeSimulation();
+  const { agents, activities, meeting, trigger, log, addActivity, clearActivities, flash, setStatus, handlePhase } = useOfficeSimulation();
   const [chatBusy, setChatBusy] = useState(false);
+  const [sessionId, setSessionId] = useState<string>(() => {
+    const existing = sessionStorage.getItem(SESSION_KEY);
+    if (existing) return existing;
+    const id = newSessionId();
+    sessionStorage.setItem(SESSION_KEY, id);
+    return id;
+  });
+  const [turns, setTurns] = useState(0);
+  const [placeholder, setPlaceholder] = useState(DEFAULT_PLACEHOLDER);
+  const tone = useMemo(() => toneFor(sessionId), [sessionId]);
 
   useEffect(() => {
     log('시스템', 'HYDS Office 가동 — 실제 자동화 로그에 연결 중...', 'info');
@@ -119,7 +150,7 @@ function App() {
     }
   }, [trigger, setStatus, log, addActivity, flash]);
 
-  // ── 채팅 → 부장 오케스트레이션 (SSE 스트리밍) ────────────────────────────
+  // ── 채팅 → 부장 오케스트레이션 (SSE 스트리밍 + 세션) ─────────────────────
   const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || chatBusy) return;
     if (!window.confirm(
@@ -127,16 +158,41 @@ function App() {
       '(부장 분석 1 + 워커 최대 5 + 종합 1 = 최대 ~7회, 대략 10~20센트)\n진행할까요?'
     )) return;
 
-    log('나 (서동현)', text, 'info');
+    addActivity({ id: `user-${Date.now()}`, agentName: '나 (서동현)', message: text, ts: Date.now(), type: 'info', tone });
     setChatBusy(true);
     try {
-      await streamChat(text, handlePhase);
+      await streamChat(text, sessionId, ev => {
+        handlePhase(ev, tone);
+        if (ev.phase === 'complete') {
+          setTurns(typeof ev.turns === 'number' ? ev.turns : t => t + 1);
+          setPlaceholder(looksLikeQuestion(ev.reply || '') ? '답변 입력...' : DEFAULT_PLACEHOLDER);
+        }
+      });
     } catch (e) {
-      handlePhase({ phase: 'error', error: String((e as Error).message || e) });
+      handlePhase({ phase: 'error', error: String((e as Error).message || e) }, tone);
     } finally {
       setChatBusy(false);
     }
-  }, [chatBusy, log, handlePhase]);
+  }, [chatBusy, sessionId, tone, addActivity, handlePhase]);
+
+  // ── 새 대화: 세션 비우고 새 ID + 로그 클리어 ─────────────────────────────
+  const handleNewConversation = useCallback(async () => {
+    if (chatBusy) return;
+    try {
+      await fetch('/api/chat/reset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+    } catch { /* 서버 못 닿아도 클라이언트는 새로 시작 */ }
+    const id = newSessionId();
+    sessionStorage.setItem(SESSION_KEY, id);
+    setSessionId(id);
+    setTurns(0);
+    setPlaceholder(DEFAULT_PLACEHOLDER);
+    clearActivities();
+    log('시스템', '🆕 새 대화를 시작했습니다', 'info');
+  }, [chatBusy, sessionId, clearActivities, log]);
 
   const lastRun = state.monitorLog[state.monitorLog.length - 1];
   const lastCheckAt = state.realtime?.last_check_at;
@@ -173,7 +229,13 @@ function App() {
               if (a) log(a.name, `클릭됨 — 현재 ${a.status}`, 'info');
             }}
           />
-          <ChatBox onSend={handleSend} disabled={chatBusy} />
+          <ChatBox
+            onSend={handleSend}
+            onNewConversation={handleNewConversation}
+            disabled={chatBusy}
+            turns={turns}
+            placeholder={placeholder}
+          />
           <ControlPanel onTrigger={handleControl} />
         </div>
 

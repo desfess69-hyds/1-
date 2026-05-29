@@ -10,6 +10,7 @@ export interface Activity {
   message: string;
   ts: number;
   type: ActivityType;
+  tone?: string;   // 세션 그룹 색상 (hex) — 있으면 좌측 보더를 이 톤으로
 }
 
 interface Props {
@@ -53,7 +54,11 @@ export function ActivityFeed({ items }: Props) {
           <div className="text-amber-700/60 text-xs korean text-center mt-8">아직 활동 없음...</div>
         ) : (
           items.map(item => (
-            <div key={item.id} className={`border-l-4 ${styleFor(item.type)} pl-3 py-2 rounded-r-lg`}>
+            <div
+              key={item.id}
+              className={`border-l-4 pl-3 py-2 rounded-r-lg ${item.tone ? '' : styleFor(item.type)}`}
+              style={item.tone ? { borderLeftColor: item.tone, background: `${item.tone}14` } : undefined}
+            >
               <div className="flex items-center gap-1.5 text-[10px] text-amber-700/70 korean">
                 <span className={`w-1.5 h-1.5 rounded-full ${dotFor(item.type)}`}></span>
                 {new Date(item.ts).toLocaleTimeString('ko-KR')}

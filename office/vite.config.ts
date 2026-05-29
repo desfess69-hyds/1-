@@ -139,6 +139,42 @@ function parsePlan(raw: string): { plan: Array<{ agent: string; task: string }>;
   }
 }
 
+// ── 대화 세션 (인메모리, 서버 재시작 시 초기화) ────────────────────────────────
+interface ChatMsg { role: 'user' | 'assistant'; content: string }
+interface ChatSession { messages: ChatMsg[]; lastActive: number }
+const SESSIONS = new Map<string, ChatSession>();
+const SESSION_TTL_MS = 60 * 60 * 1000;   // 60분 idle 만료
+const MAX_TURNS = 50;                     // 세션당 최대 50턴 (초과 시 오래된 것부터 제거)
+const MAX_CONTEXT_CHARS = 24000;          // 누적이 이보다 길면 새 대화 권유
+
+function getSession(id: string): ChatSession {
+  let s = SESSIONS.get(id);
+  if (!s) { s = { messages: [], lastActive: Date.now() }; SESSIONS.set(id, s); }
+  s.lastActive = Date.now();
+  return s;
+}
+function cleanupSessions() {
+  const now = Date.now();
+  for (const [id, s] of SESSIONS) {
+    if (now - s.lastActive > SESSION_TTL_MS) SESSIONS.delete(id);
+  }
+}
+
+// 히스토리를 포함한 Claude 호출 (부장 전용 — 워커는 stateless callClaude 사용)
+async function callClaudeMessages(system: string, messages: ChatMsg[], maxTokens = 1024): Promise<string> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error('ANTHROPIC_API_KEY 가 .env에 없습니다');
+  const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model, max_tokens: maxTokens, ...(system ? { system } : {}), messages }),
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(`Claude API ${res.status}: ${t.slice(0, 200)}`); }
+  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
+  return (data.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim();
+}
+
 // HYDS Python 자동화 data/*.json 실시간 노출 + 스크립트 실행 + Claude 채팅 API
 function hydsBackendPlugin(): Plugin {
   function readJsonFile(file: string): Promise<unknown> {
@@ -183,73 +219,114 @@ function hydsBackendPlugin(): Plugin {
         });
       });
 
-      // 3) Claude 채팅 — 부장 오케스트레이션 (SSE 스트리밍)
+      // 3) 세션 초기화 (반드시 /api/chat 보다 먼저 등록)
+      server.middlewares.use('/api/chat/reset', async (req, res) => {
+        const r = res as ServerResponse;
+        if (req.method !== 'POST') return sendJson(r, 405, { error: 'POST만 허용' });
+        const body = await readJsonBody(req);
+        const sid = typeof body.sessionId === 'string' ? body.sessionId : '';
+        if (sid) SESSIONS.delete(sid);
+        sendJson(r, 200, { ok: true });
+      });
+
+      // 4) Claude 채팅 — 부장 오케스트레이션 (SSE 스트리밍 + 세션 메모리)
       server.middlewares.use('/api/chat', async (req, res) => {
         const r = res as ServerResponse;
         if (req.method !== 'POST') return sendJson(r, 405, { error: 'POST만 허용' });
         const body = await readJsonBody(req);
         const text = typeof body.text === 'string' ? body.text.trim() : '';
+        const sessionId = typeof body.sessionId === 'string' && body.sessionId ? body.sessionId : 'default';
         if (!text) return sendJson(r, 400, { error: '메시지가 비었습니다' });
+
+        const session = getSession(sessionId);
 
         r.statusCode = 200;
         r.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
         r.setHeader('Cache-Control', 'no-cache, no-transform');
         r.setHeader('Connection', 'keep-alive');
         const send = (obj: unknown) => r.write(`data: ${JSON.stringify(obj)}\n\n`);
+        const turns = () => Math.floor(session.messages.length / 2);
+
+        // 안전장치: 대화가 너무 길면 Claude 호출 없이 새 대화 권유
+        const contextChars = session.messages.reduce((n, m) => n + m.content.length, 0) + text.length;
+        if (contextChars > MAX_CONTEXT_CHARS) {
+          send({ phase: 'planning' });
+          send({
+            phase: 'complete',
+            reply: '대화가 많이 길어졌습니다 🙏 맥락이 흐려질 수 있으니 상단 "🆕 새 대화"로 다시 시작하시는 걸 권합니다.',
+            turns: turns(),
+          });
+          return r.end();
+        }
 
         try {
           send({ phase: 'planning' });
 
-          // 1) 부장: 작업 분해 (JSON 강제)
+          // 1) 부장: 작업 분해 (히스토리 포함, JSON 강제)
           const directorSystem = await loadAgentSystem('hyds-director');
           const planInstruction =
             '\n\n[출력 형식 — 아래 JSON만 출력, 다른 텍스트 금지]\n' +
-            '{"plan":[{"agent":"retreat-planner|retreat-monitor|report-summarizer|content-creator|church-communicator","task":"구체적 작업"}],' +
+            '{"plan":[{"agent":"retreat-planner|retreat-monitor|report-summarizer|content-creator|church-communicator","task":"구체적 작업(이전 대화 맥락을 task에 충분히 녹여 자기완결적으로)"}],' +
             '"reasoning":"분해 이유 한 줄","answer":"plan이 빈 배열일 때만 대표에게 직접 답"}\n' +
-            '규칙: 여러 영역이 얽히면 plan에 여러 개, 단일 작업이면 1개, 단순 조회·인사·잡담이면 plan:[] 이고 answer에 직접 답한다.';
-          const planRaw = await callClaude(directorSystem + planInstruction, text, 900);
+            '규칙: 여러 영역이 얽히면 plan에 여러 개, 단일 작업이면 1개, 단순 조회·인사·되묻기면 plan:[] 이고 answer에 직접 답한다. 정보가 부족하면 plan:[] 로 두고 answer에 필요한 정보를 되물어라.';
+          const planMsgs: ChatMsg[] = [...session.messages, { role: 'user', content: text }];
+          const planRaw = await callClaudeMessages(directorSystem + planInstruction, planMsgs, 900);
           const parsed = parsePlan(planRaw);
           send({ phase: 'plan-ready', plan: parsed.plan, reasoning: parsed.reasoning });
 
-          // 단순 조회 → 즉답 (위임 없음)
+          let finalReply: string;
+
           if (parsed.plan.length === 0) {
-            send({ phase: 'complete', reply: parsed.answer || planRaw });
-            return r.end();
+            // 즉답/되묻기 (위임 없음)
+            finalReply = parsed.answer || planRaw;
+            send({ phase: 'complete', reply: finalReply, turns: turns() + 1 });
+          } else {
+            // 2) 위임 통보
+            send({ phase: 'delegating', plan: parsed.plan });
+
+            // 3) 워커 병렬 실행 (stateless) — 각 완료 시 worker-done
+            const results = await Promise.all(parsed.plan.map(async item => {
+              try {
+                const sys = await loadAgentSystem(item.agent);
+                const reply = await callClaude(sys, item.task, 1024);
+                send({ phase: 'worker-done', agent: item.agent, task: item.task, result: reply });
+                return { ...item, result: reply };
+              } catch (e) {
+                const msg = `(실패: ${String((e as Error).message || e)})`;
+                send({ phase: 'worker-done', agent: item.agent, task: item.task, result: msg, error: true });
+                return { ...item, result: msg };
+              }
+            }));
+
+            // 4) 부장 종합 (히스토리 포함)
+            send({ phase: 'synthesizing' });
+            const synthSystem = directorSystem +
+              '\n\n[종합 지시] 아래는 각 팀장이 제출한 결과다. 대표에게 한 페이지로 종합 보고하라. ' +
+              '결론 먼저, 그다음 팀장별 핵심, 마지막에 다음 액션 제안.';
+            const synthUser = `원 요청: ${text}\n\n` +
+              results.map(w => `### ${w.agent} — ${w.task}\n${w.result}`).join('\n\n');
+            const synthMsgs: ChatMsg[] = [...session.messages, { role: 'user', content: synthUser }];
+            finalReply = await callClaudeMessages(synthSystem, synthMsgs, 1500);
+            send({ phase: 'complete', reply: finalReply, turns: turns() + 1 });
           }
 
-          // 2) 위임 통보
-          send({ phase: 'delegating', plan: parsed.plan });
-
-          // 3) 워커 병렬 실행 — 각 완료 시 worker-done
-          const results = await Promise.all(parsed.plan.map(async item => {
-            try {
-              const sys = await loadAgentSystem(item.agent);
-              const reply = await callClaude(sys, item.task, 1024);
-              send({ phase: 'worker-done', agent: item.agent, task: item.task, result: reply });
-              return { ...item, result: reply };
-            } catch (e) {
-              const msg = `(실패: ${String((e as Error).message || e)})`;
-              send({ phase: 'worker-done', agent: item.agent, task: item.task, result: msg, error: true });
-              return { ...item, result: msg };
-            }
-          }));
-
-          // 4) 부장 종합
-          send({ phase: 'synthesizing' });
-          const synthSystem = directorSystem +
-            '\n\n[종합 지시] 아래는 각 팀장이 제출한 결과다. 대표에게 한 페이지로 종합 보고하라. ' +
-            '결론 먼저, 그다음 팀장별 핵심, 마지막에 다음 액션 제안.';
-          const synthUser = `원 요청: ${text}\n\n` +
-            results.map(w => `### ${w.agent} — ${w.task}\n${w.result}`).join('\n\n');
-          const finalReply = await callClaude(synthSystem, synthUser, 1500);
-
-          send({ phase: 'complete', reply: finalReply });
+          // 세션에 종합본만 기록 (워커 raw 제외), 50턴 초과 시 오래된 것부터 제거
+          session.messages.push({ role: 'user', content: text }, { role: 'assistant', content: finalReply });
+          const maxMsgs = MAX_TURNS * 2;
+          if (session.messages.length > maxMsgs) {
+            session.messages.splice(0, session.messages.length - maxMsgs);
+          }
+          session.lastActive = Date.now();
           r.end();
         } catch (e) {
           send({ phase: 'error', error: String((e as Error).message || e) });
           r.end();
         }
       });
+
+      // 만료 세션 정리 (10분마다)
+      const cleanupTimer = setInterval(cleanupSessions, 10 * 60 * 1000);
+      if (typeof cleanupTimer.unref === 'function') cleanupTimer.unref();
     },
   };
 }
