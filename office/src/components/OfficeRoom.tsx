@@ -4,9 +4,11 @@ import type { Agent } from '@/data/agents';
 interface Props {
   agents: Agent[];
   onAgentClick: (id: string) => void;
+  meetingActive?: boolean;
+  agenda?: string;
 }
 
-export function OfficeRoom({ agents, onAgentClick }: Props) {
+export function OfficeRoom({ agents, onAgentClick, meetingActive = false, agenda = '' }: Props) {
   return (
     <div className="relative w-full h-[600px] bg-office-floor border-4 border-office-trim rounded-2xl overflow-hidden shadow-2xl">
       {/* 나무 바닥 무늬 */}
@@ -71,7 +73,52 @@ export function OfficeRoom({ agents, onAgentClick }: Props) {
       </div>
 
       {/* 카펫 (중앙) */}
-      <div className="absolute top-[42%] left-1/2 -translate-x-1/2 w-2/3 h-1/2 bg-orange-200/30 rounded-3xl border-2 border-orange-300/40"></div>
+      <div className="absolute top-[42%] left-[28%] w-1/3 h-1/2 bg-orange-200/30 rounded-3xl border-2 border-orange-300/40"></div>
+
+      {/* ── 회의실 (워룸) ─────────────────────────────────────── */}
+      {/* 회의 중 따뜻한 빛 글로우 (박스 뒤) */}
+      {meetingActive && (
+        <div
+          className="absolute pointer-events-none rounded-full bg-yellow-200/50 blur-3xl animate-pulse"
+          style={{ left: 580, top: 320, width: 180, height: 200 }}
+        />
+      )}
+
+      {/* 회의실 박스 (점선 테두리) */}
+      <div
+        className="absolute rounded-2xl border-2 border-dashed transition-all duration-700"
+        style={{
+          left: 540, top: 226, width: 240, height: 356,
+          borderColor: meetingActive ? '#f59e0b' : 'rgba(139,90,60,0.45)',
+          background: meetingActive ? 'rgba(254,243,199,0.45)' : 'rgba(255,255,255,0.10)',
+          boxShadow: meetingActive
+            ? 'inset 0 0 36px 6px rgba(251,191,36,0.40), 0 0 22px 4px rgba(251,191,36,0.30)'
+            : 'none',
+        }}
+      >
+        <div className="absolute -top-3 left-3 bg-office-trim text-yellow-100 text-[10px] korean px-2 py-0.5 rounded-full shadow whitespace-nowrap">
+          📊 회의실
+        </div>
+      </div>
+
+      {/* 화이트보드 (회의실 상단) */}
+      <div
+        className="absolute bg-white border-2 border-office-trim rounded shadow-md overflow-hidden flex flex-col"
+        style={{ left: 556, top: 242, width: 208, height: 40 }}
+      >
+        <div className="text-[7px] text-amber-700 korean px-1 leading-none pt-0.5 border-b border-amber-200/70">📋 안건</div>
+        <div className={`text-[8px] korean px-1 leading-tight flex-1 flex items-center ${agenda.startsWith('✅') ? 'text-emerald-600 font-bold' : 'text-[#4a2c1a]'}`}>
+          {meetingActive ? (agenda || '회의 준비 중...') : '—'}
+        </div>
+      </div>
+
+      {/* 회의 테이블 (우드 직사각형) */}
+      <div
+        className="absolute bg-office-trim rounded-xl shadow-lg"
+        style={{ left: 600, top: 358, width: 112, height: 94 }}
+      >
+        <div className="absolute inset-1.5 rounded-lg border border-amber-300/30"></div>
+      </div>
 
       {/* 책상들 (캐릭터 아래) */}
       {agents.map(a => (

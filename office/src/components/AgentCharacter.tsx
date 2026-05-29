@@ -37,12 +37,22 @@ export function AgentCharacter({ agent, onClick }: Props) {
     );
   };
 
+  // 회의실에 있고(이동/작업 중) → 회의실 자리, 아니면 평상시 자리
+  const useMeetingPos = agent.inMeeting && (agent.status === 'moving' || agent.status === 'working');
+  const pos = useMeetingPos ? agent.meetingPosition : agent.position;
+  const isChairing = agent.role === 'hyds-director' && agent.inMeeting;
+
   return (
     <div
-      className="absolute cursor-pointer transition-transform hover:scale-110"
-      style={{ left: agent.position.x, top: agent.position.y }}
+      className="absolute cursor-pointer hover:scale-110"
+      style={{ left: pos.x, top: pos.y, transition: 'left 1.2s ease, top 1.2s ease, transform 0.2s ease' }}
       onClick={onClick}
     >
+      {/* 부장 회의 주관 배지 */}
+      {isChairing && (
+        <div className="absolute -top-2 -right-2 z-20 bg-amber-500 text-white text-[7px] korean px-1.5 py-0.5 rounded-full shadow whitespace-nowrap">🎙 주관</div>
+      )}
+
       {/* 말풍선 */}
       {agent.message && (
         <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-[#4a2c1a] text-[10px] korean px-3 py-2 rounded-xl shadow-lg max-w-[200px] z-10 border-2 border-amber-200">

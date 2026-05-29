@@ -47,7 +47,7 @@ async function streamChat(text: string, onEvent: (ev: PhaseEvent) => void) {
 }
 
 function App() {
-  const { agents, activities, trigger, log, addActivity, flash, setStatus, handlePhase } = useOfficeSimulation();
+  const { agents, activities, meeting, trigger, log, addActivity, flash, setStatus, handlePhase } = useOfficeSimulation();
   const [chatBusy, setChatBusy] = useState(false);
 
   useEffect(() => {
@@ -166,6 +166,8 @@ function App() {
         <div className="col-span-2 space-y-6">
           <OfficeRoom
             agents={agents}
+            meetingActive={meeting.active}
+            agenda={meeting.agenda}
             onAgentClick={id => {
               const a = agents.find(x => x.id === id);
               if (a) log(a.name, `클릭됨 — 현재 ${a.status}`, 'info');

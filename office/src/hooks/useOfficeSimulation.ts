@@ -23,6 +23,7 @@ function genId() {
 export function useOfficeSimulation() {
   const [agents, setAgents] = useState<Agent[]>(initialAgents);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [meeting, setMeeting] = useState<{ active: boolean; agenda: string }>({ active: false, agenda: '' });
   const timeoutsRef = useRef<number[]>([]);
 
   const log = useCallback((agentName: string, message: string, type: Activity['type'] = 'info') => {
@@ -51,6 +52,11 @@ export function useOfficeSimulation() {
     timeoutsRef.current.push(t);
   }, [setStatus]);
 
+  // 회의실 이동: inMeeting 플래그 + 상태 + 말풍선 동시 갱신
+  const moveAgent = useCallback((id: string, inMeeting: boolean, status: AgentStatus, message?: string) => {
+    setAgents(prev => prev.map(a => a.id === id ? { ...a, inMeeting, status, message } : a));
+  }, []);
+
   const nameOf = useCallback(
     (id: string) => initialAgents.find(a => a.id === id)?.name || id,
     [],
@@ -71,17 +77,27 @@ export function useOfficeSimulation() {
         break;
       case 'delegating': {
         const plan = ev.plan || [];
+        const agenda = plan
+          .map(p => (p.task.length > 18 ? p.task.slice(0, 18) + '…' : p.task))
+          .join('  +  ');
+        setMeeting({ active: true, agenda });
         addActivity({ id: `ph-deleg-${now}`, agentName: '부장', message: `${plan.length}개 팀장에게 위임`, ts: now, type: 'delegating' });
+
+        // 부장 회의실 합류 (synthesizing 까지 머묾)
+        moveAgent('hyds-director', true, 'moving', '회의 소집');
+        timeoutsRef.current.push(window.setTimeout(() => moveAgent('hyds-director', true, 'working', '회의 주관 중'), 1500));
+
+        // 워커들 회의실로 이동 → 1.5초 후 작업
         plan.forEach((item, i) => {
           const bubble = item.task.slice(0, 30) + (item.task.length > 30 ? '…' : '');
-          setStatus(item.agent, 'working', bubble);
+          moveAgent(item.agent, true, 'moving', '회의실로 이동...');
           addActivity({ id: `ph-deleg-${now}-${i}`, agentName: nameOf(item.agent), message: `▶ ${item.task}`, ts: now + i + 1, type: 'delegating' });
+          timeoutsRef.current.push(window.setTimeout(() => moveAgent(item.agent, true, 'working', bubble), 1500));
         });
         break;
       }
       case 'worker-done': {
         const id = ev.agent || '';
-        setStatus(id, 'idle', undefined);
         const short = (ev.result || '').replace(/\s+/g, ' ').trim().slice(0, 90);
         addActivity({
           id: `ph-done-${id}-${now}`,
@@ -90,32 +106,43 @@ export function useOfficeSimulation() {
           ts: now,
           type: ev.error ? 'alert' : 'work',
         });
+        // 자기 자리로 복귀 → 1.5초 후 idle
+        moveAgent(id, false, 'moving', '자리로 복귀');
+        timeoutsRef.current.push(window.setTimeout(() => moveAgent(id, false, 'idle', undefined), 1500));
         break;
       }
       case 'synthesizing':
-        setStatus('hyds-director', 'working', '종합 보고 작성 중...');
+        // 부장은 회의실에서 종합
+        moveAgent('hyds-director', true, 'working', '종합 보고 작성 중...');
         addActivity({ id: `ph-synth-${now}`, agentName: '부장', message: '팀장 결과 종합 중...', ts: now, type: 'synthesizing' });
         break;
       case 'complete': {
         const reply = ev.reply || '(빈 응답)';
         const bubble = reply.length > 120 ? reply.slice(0, 120) + '…' : reply;
-        setStatus('hyds-director', 'debating', bubble);
+        setMeeting({ active: true, agenda: '✅ 완료' });
         addActivity({ id: `ph-complete-${now}`, agentName: '부장', message: reply, ts: now, type: 'complete' });
+        // 부장 자리로 복귀 후 최종 보고
+        moveAgent('hyds-director', false, 'moving', '보고 정리');
+        timeoutsRef.current.push(window.setTimeout(() => moveAgent('hyds-director', false, 'debating', bubble), 1500));
+        // 화이트보드 잠시 후 사라짐 + 부장 idle 복귀
+        timeoutsRef.current.push(window.setTimeout(() => setMeeting({ active: false, agenda: '' }), 3500));
         timeoutsRef.current.push(window.setTimeout(() => setStatus('hyds-director', 'idle', undefined), 10000));
         break;
       }
       case 'error':
-        setStatus('hyds-director', 'idle', '으... 문제가 생겼어요 😢');
+        setMeeting({ active: false, agenda: '' });
+        moveAgent('hyds-director', false, 'idle', '으... 문제가 생겼어요 😢');
         addActivity({ id: `ph-err-${now}`, agentName: '부장', message: `❌ ${ev.error}`, ts: now, type: 'alert' });
         timeoutsRef.current.push(window.setTimeout(() => setStatus('hyds-director', 'idle', undefined), 5000));
         break;
     }
-  }, [setStatus, addActivity, nameOf]);
+  }, [setStatus, addActivity, moveAgent, nameOf]);
 
   const resetAll = useCallback(() => {
     timeoutsRef.current.forEach(t => clearTimeout(t));
     timeoutsRef.current = [];
     setAgents(initialAgents);
+    setMeeting({ active: false, agenda: '' });
     log('시스템', '모든 에이전트 idle 복귀', 'info');
   }, [log]);
 
@@ -208,5 +235,5 @@ export function useOfficeSimulation() {
     }
   }, [log, setStatus, resetAll]);
 
-  return { agents, activities, trigger, log, setStatus, addActivity, flash, handlePhase };
+  return { agents, activities, meeting, trigger, log, setStatus, addActivity, flash, handlePhase };
 }
