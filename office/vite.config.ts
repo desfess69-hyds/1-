@@ -19,8 +19,11 @@ const DIRECTOR_WORKERS = new Set([
   'retreat-planner', 'retreat-monitor', 'report-summarizer', 'church-communicator',
   'media-director',
 ]);
-// 미디어 본부장(media-director)이 다시 위임하는 팀장 3명
-const MEDIA_WORKERS = new Set(['concept-planner', 'scriptwriter', 'media-producer']);
+// 미디어 본부장(media-director)이 다시 위임하는 팀장 4명 (trend-scout 가장 먼저)
+const MEDIA_WORKERS = new Set(['trend-scout', 'concept-planner', 'scriptwriter', 'media-producer']);
+// 트렌드 정찰이 필요한 작업을 감지하는 키워드 (있으면 trend-scout 가장 먼저).
+// 릴스·쇼츠 단독은 '메시지 콘텐츠'일 수 있어 제외 — 트렌드성 단어만.
+const TREND_RE = /트렌드|밈|챌린지|유행|CapCut|캡컷|MZ|Y2K|바이럴|짤/i;
 // /api/chat 에서 시스템 프롬프트로 쓸 수 있는 에이전트 (화이트리스트 — 경로 traversal 방지)
 const ALLOWED_AGENTS = new Set([
   'hyds-director',
@@ -151,9 +154,11 @@ async function runMediaHQ(task: string, send: (obj: unknown) => void): Promise<s
   const dirSystem = await loadAgentSystem('media-director');
   const subInstruction =
     '\n\n[출력 형식 — 아래 JSON만 출력, 다른 텍스트 금지]\n' +
-    '{"plan":[{"agent":"concept-planner|scriptwriter|media-producer","task":"구체적 작업(맥락을 충분히 녹여 자기완결적으로)"}],' +
+    '{"plan":[{"agent":"trend-scout|concept-planner|scriptwriter|media-producer","task":"구체적 작업(맥락을 충분히 녹여 자기완결적으로)"}],' +
     '"reasoning":"분배 이유 한 줄","answer":"plan이 빈 배열일 때만 부장에게 직접 답"}\n' +
-    '규칙: 의존순서 concept-planner(전략·톤) → scriptwriter(카피) → media-producer(제작)를 지킨다. ' +
+    '규칙: 트렌드·밈·챌린지·유행·CapCut 요소가 있으면 trend-scout를 plan 맨 앞에 둔다(가장 먼저 실행). ' +
+    '의존순서 trend-scout(트렌드 정찰) → concept-planner(전략·톤) → scriptwriter(카피) → media-producer(제작)를 지킨다. ' +
+    '트렌드성 없는 메시지 콘텐츠는 trend-scout를 건너뛴다(비용 절감). ' +
     '캠페인·신규 콘텐츠면 여러 개, 카피만/이미지만이면 1개, 단순 질의면 plan:[] 이고 answer에 직접 답한다.';
   const raw = await callClaude(dirSystem + subInstruction, task, 900);
   const sub = parsePlan(raw, MEDIA_WORKERS);
@@ -161,21 +166,44 @@ async function runMediaHQ(task: string, send: (obj: unknown) => void): Promise<s
   // 본부장이 직접 답하는 경우 (위임 불필요)
   if (sub.plan.length === 0) return sub.answer || raw;
 
-  // 본부장이 자기 회의실로 팀장 소집
-  send({ phase: 'sub-delegating', director: 'media-director', plan: sub.plan, reasoning: sub.reasoning });
+  // 결정적 보정: task에 트렌드 키워드가 있는데 plan에 trend-scout가 없으면 맨 앞에 주입
+  if (TREND_RE.test(task) && !sub.plan.some(p => p.agent === 'trend-scout')) {
+    sub.plan.unshift({ agent: 'trend-scout', task: `다음 작업에 쓸 트렌드 정찰(CapCut 검색어·적용 방안): ${task}` });
+  }
+  // trend-scout 는 항상 맨 앞 → 가장 먼저 실행, 결과를 나머지 팀장에게 컨텍스트로 전달
+  const trendSteps = sub.plan.filter(p => p.agent === 'trend-scout');
+  const restSteps = sub.plan.filter(p => p.agent !== 'trend-scout');
+  const ordered = [...trendSteps, ...restSteps];
 
-  const subResults = await Promise.all(sub.plan.map(async item => {
+  // 본부장이 자기 회의실로 팀장 소집 (trend-scout 먼저 표시)
+  send({ phase: 'sub-delegating', director: 'media-director', plan: ordered, reasoning: sub.reasoning });
+
+  // 팀장 한 명 실행 (extraContext: trend-scout 브리프를 다운스트림에 주입. 표시용 task는 원본 유지)
+  const runOne = async (item: { agent: string; task: string }, extraContext = '') => {
     try {
       const sys = await loadAgentSystem(item.agent);
-      const reply = await callClaude(sys, item.task, 1024);
+      const userText = extraContext
+        ? `${item.task}\n\n[trend-scout 트렌드 브리프 — 반영할 것]\n${extraContext}`
+        : item.task;
+      const reply = await callClaude(sys, userText, 1024);
       send({ phase: 'sub-worker-done', director: 'media-director', agent: item.agent, task: item.task, result: reply });
-      return { ...item, result: reply };
+      return { ...item, result: reply, ok: true };
     } catch (e) {
       const msg = `(실패: ${String((e as Error).message || e)})`;
       send({ phase: 'sub-worker-done', director: 'media-director', agent: item.agent, task: item.task, result: msg, error: true });
-      return { ...item, result: msg };
+      return { ...item, result: msg, ok: false };
     }
-  }));
+  };
+
+  // 1) trend-scout 먼저 순차 실행 → 트렌드 브리프 확보 (성공분만)
+  const trendResults = [];
+  for (const step of trendSteps) trendResults.push(await runOne(step));
+  const trendBrief = trendResults.filter(r => r.ok).map(r => r.result).join('\n\n');
+
+  // 2) 나머지 팀장은 트렌드 브리프를 컨텍스트로 받아 병렬 실행
+  const restResults = await Promise.all(restSteps.map(item => runOne(item, trendBrief)));
+
+  const subResults = [...trendResults, ...restResults];
 
   // 본부장 종합 (톤·메시지 일관성 검수)
   const synthSystem = dirSystem +
@@ -316,7 +344,7 @@ function hydsBackendPlugin(): Plugin {
             '{"plan":[{"agent":"retreat-planner|retreat-monitor|report-summarizer|church-communicator|media-director","task":"구체적 작업(이전 대화 맥락을 task에 충분히 녹여 자기완결적으로)"}],' +
             '"reasoning":"분해 이유 한 줄","answer":"plan이 빈 배열일 때만 대표에게 직접 답"}\n' +
             '규칙: 수련회(기획·점검·리포트·교회답변)는 해당 팀장에게 직접 위임한다. ' +
-            '미디어(카드뉴스·릴스·영상·홍보·캡션·캠페인·콘텐츠 전략)는 쪼개지 말고 "media-director"에게 통째로 한 건으로 위임한다(본부장이 산하 3팀장에 재분배). ' +
+            '미디어(카드뉴스·릴스·영상·홍보·캡션·캠페인·콘텐츠 전략·트렌드·밈·챌린지·유행·CapCut·MZ·Y2K)는 쪼개지 말고 "media-director"에게 통째로 한 건으로 위임한다(본부장이 산하 4팀장에 재분배, 트렌드면 trend-scout가 가장 먼저). ' +
             '여러 영역이 얽히면 plan에 여러 개, 단일 작업이면 1개, 단순 조회·인사·되묻기면 plan:[] 이고 answer에 직접 답한다. 정보가 부족하면 plan:[] 로 두고 answer에 필요한 정보를 되물어라.';
           const planMsgs: ChatMsg[] = [...session.messages, { role: 'user', content: text }];
           const planRaw = await callClaudeMessages(directorSystem + planInstruction, planMsgs, 900);

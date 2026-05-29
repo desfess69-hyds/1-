@@ -9,31 +9,31 @@
 
 ## 단계 0 — 시스템 지침 정착 (선결 조건)
 
-- [ ] 0-1. `CLAUDE_CODE_SYSTEM.md` 를 HYDS 폴더 루트에 복사
-- [ ] 0-2. `docs/rules/backend_rules.md`, `docs/rules/frontend_rules.md` HYDS 폴더에 배치
-- [ ] 0-3. `docs/PLAN.md`, `docs/CONTEXT.md`, `docs/CHECKLIST.md` HYDS 폴더에 정착
-- [ ] 0-4. `CLAUDE.md` 부장 7원칙에 "PLAN/CONTEXT/CHECKLIST 3대 문서 의무 작성" 한 줄 추가
-- [ ] 0-5. git 커밋: "HYDS: Claude Code System v2 지침 도입 + 미디어팀 PLAN"
+- [x] 0-1. `CLAUDE_CODE_SYSTEM.md` 를 HYDS 폴더 루트에 복사
+- [x] 0-2. `docs/rules/backend_rules.md`, `docs/rules/frontend_rules.md` HYDS 폴더에 배치
+- [x] 0-3. `docs/PLAN.md`, `docs/CONTEXT.md`, `docs/CHECKLIST.md` HYDS 폴더에 정착
+- [x] 0-4. `CLAUDE.md` 부장 7원칙에 "PLAN/CONTEXT/CHECKLIST 3대 문서 의무 작성" 한 줄 추가
+- [x] 0-5. git 커밋: "HYDS: Claude Code System v2 지침 도입 + 미디어팀 PLAN"
 
 ---
 
 ## 단계 1 — directive(SOP) 4종 작성
 
-- [ ] 1-1. `directives/media_brand_tone.md` — HYDS 톤·금기·자막·BGM 정책 (마스터 참조)
-- [ ] 1-2. `directives/scout_trends.md` — 트렌드 수집·필터·CapCut 가이드 SOP
-- [ ] 1-3. `directives/create_reels.md` — 30초/60초 릴스 제작 SOP
-- [ ] 1-4. `directives/create_shorts.md` — 유튜브 쇼츠 변환 SOP
-- [ ] 1-5. git 커밋: "HYDS: 미디어 directive 4종 추가"
+- [x] 1-1. `directives/media_brand_tone.md` — HYDS 톤·금기·자막·BGM 정책 (마스터 참조)
+- [x] 1-2. `directives/scout_trends.md` — 트렌드 수집·필터·CapCut 가이드 SOP
+- [x] 1-3. `directives/create_reels.md` — 30초/60초 릴스 제작 SOP
+- [x] 1-4. `directives/create_shorts.md` — 유튜브 쇼츠 변환 SOP
+- [x] 1-5. git 커밋: "HYDS: 미디어 directive 4종 추가"
 
 ---
 
 ## 단계 2 — 신규 sub-agent: trend-scout
 
-- [ ] 2-1. `.claude/agents/trend-scout.md` 생성 (페르소나 + PROACTIVELY 키워드)
-- [ ] 2-2. CLAUDE/AGENTS/GEMINI.md에 미디어 본부 산하 5번째 팀장으로 trend-scout 명시
-- [ ] 2-3. media-director.md의 위임 기준에 트렌드 키워드 라우팅 추가
-- [ ] 2-4. README의 sub-agent 목록 갱신
-- [ ] 2-5. git 커밋: "HYDS: trend-scout sub-agent 신설"
+- [x] 2-1. `.claude/agents/trend-scout.md` 생성 (페르소나 + PROACTIVELY 키워드)
+- [x] 2-2. CLAUDE/AGENTS/GEMINI.md에 미디어 본부 산하 5번째 팀장으로 trend-scout 명시
+- [x] 2-3. media-director.md의 위임 기준에 트렌드 키워드 라우팅 추가
+- [x] 2-4. README의 sub-agent 목록 갱신
+- [x] 2-5. git 커밋: "HYDS: trend-scout sub-agent 신설"
 
 ---
 
@@ -55,13 +55,13 @@
 
 ## 단계 4 — Office UI 확장 (10번째 캐릭터)
 
-- [ ] 4-1. `office/src/data/agents.ts` — trend-scout 추가 (id, 색 #fb923c, position, meetingPosition)
-- [ ] 4-2. 미디어 회의실 좌표 4명 → 5명으로 재배치 (테이블 둘러앉기 5명)
-- [ ] 4-3. 백엔드 화이트리스트 `MEDIA_WORKERS`에 trend-scout 등록
-- [ ] 4-4. 채팅 키워드 라우팅: "트렌드/밈/챌린지/유행/CapCut" → trend-scout
-- [ ] 4-5. `runMediaHQ()` plan 생성 시 trend-scout 호출 조건 추가
+- [x] 4-1. `office/src/data/agents.ts` — trend-scout 추가 (id, 색 #fb923c, position, meetingPosition)
+- [x] 4-2. 미디어 회의실 좌표 4명 → 5명으로 재배치 (테이블 둘러앉기 5명)
+- [x] 4-3. 백엔드 화이트리스트 `MEDIA_WORKERS`에 trend-scout 등록
+- [x] 4-4. 채팅 키워드 라우팅: "트렌드/밈/챌린지/유행/CapCut" → trend-scout
+- [x] 4-5. `runMediaHQ()` plan 생성 시 trend-scout 호출 조건 추가
 - [ ] 4-6. F5 새로고침 + 화면 확인 (캐릭터 좌표 겹침 없는지)
-- [ ] 4-7. git 커밋: "HYDS Office: trend-scout 캐릭터 + 회의실 5명 배치"
+- [x] 4-7. git 커밋: "HYDS Office: trend-scout 캐릭터 + 회의실 5명 배치"
 
 ---
 
@@ -122,8 +122,8 @@
 ## 진척률 계산
 
 총 항목 수: **52개**
-완료: **0**
-진척률: **0%**
+완료: **21** (단계 0~2 + 4. 4-6 F5 시각 확인만 대표 몫)
+진척률: **약 40%** (52항목 중 21)
 
 ---
 

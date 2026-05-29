@@ -3,7 +3,7 @@ export type AgentStatus = 'idle' | 'working' | 'debating' | 'thinking' | 'moving
 // 어느 본부 소속인가 (회의실 배정 기준)
 //  - exec   : 부장 (수련회 회의실을 직접 주관)
 //  - retreat: 수련회 본부 팀장 (부장이 직접 관리)
-//  - media  : 미디어 본부 (본부장 media-director + 팀장 3명)
+//  - media  : 미디어 본부 (본부장 media-director + 팀장 4명: trend-scout/concept/script/producer)
 export type Hq = 'exec' | 'retreat' | 'media';
 export type RoomId = 'retreat' | 'media';
 
@@ -135,9 +135,23 @@ export const initialAgents: Agent[] = [
     room: 'media',
     isChair: true,
     position: { x: 35, y: 350 },
-    meetingPosition: { x: 580, y: 460 },   // 미디어 회의실 상석
+    meetingPosition: { x: 580, y: 460 },   // 미디어 회의실 상석 (본부장)
     status: 'idle',
     trigger: 'manual',
+  },
+  // 미디어 팀장 4명 = 테이블 네 모서리 (수련회 회의실 좌표를 x+402 미러). 겹침 없음.
+  {
+    id: 'trend-scout',
+    name: '트렌드',
+    role: 'trend-scout',
+    color: '#fb923c',  // 주황 (트렌드 정찰병)
+    hair: '#7c2d12',
+    hq: 'media',
+    room: 'media',
+    position: { x: 535, y: 350 },
+    meetingPosition: { x: 492, y: 538 },   // 좌상 (가장 먼저 발언)
+    status: 'idle',
+    trigger: 'weekly-trends',
   },
   {
     id: 'concept-planner',
@@ -148,7 +162,7 @@ export const initialAgents: Agent[] = [
     hq: 'media',
     room: 'media',
     position: { x: 160, y: 350 },
-    meetingPosition: { x: 494, y: 540 },
+    meetingPosition: { x: 670, y: 538 },   // 우상
     status: 'idle',
     trigger: 'manual',
   },
@@ -161,7 +175,7 @@ export const initialAgents: Agent[] = [
     hq: 'media',
     room: 'media',
     position: { x: 285, y: 350 },
-    meetingPosition: { x: 666, y: 540 },
+    meetingPosition: { x: 492, y: 604 },   // 좌하
     status: 'idle',
     trigger: 'manual',
   },
@@ -169,12 +183,12 @@ export const initialAgents: Agent[] = [
     id: 'media-producer',
     name: '제작자',
     role: 'media-producer',
-    color: '#fdba74',  // 주황
+    color: '#fdba74',  // 주황(연)
     hair: '#c2410c',
     hq: 'media',
     room: 'media',
     position: { x: 410, y: 350 },
-    meetingPosition: { x: 580, y: 606 },
+    meetingPosition: { x: 670, y: 604 },   // 우하
     status: 'idle',
     trigger: 'manual',
   },
