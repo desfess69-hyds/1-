@@ -94,12 +94,19 @@ def main():
     keywords = [k.strip() for k in args.keywords.split(",") if k.strip()]
 
     # 주간 모드: 관심 키워드 풀에서 자율 선정
+    # trend_keywords.json 은 배열 `[...]` 또는 객체 `{"keywords":[...]}` 둘 다 허용.
     if args.weekly and not keywords:
         kw_file = PROJECT_ROOT / "data" / "trend_keywords.json"
         if kw_file.exists():
             import json
             try:
-                keywords = json.loads(kw_file.read_text(encoding="utf-8"))
+                raw = json.loads(kw_file.read_text(encoding="utf-8"))
+                if isinstance(raw, dict):
+                    keywords = [str(k).strip() for k in raw.get("keywords", []) if str(k).strip()]
+                elif isinstance(raw, list):
+                    keywords = [str(k).strip() for k in raw if str(k).strip()]
+                else:
+                    keywords = []
             except (json.JSONDecodeError, ValueError):
                 keywords = []
 

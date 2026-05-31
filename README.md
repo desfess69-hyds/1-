@@ -45,6 +45,44 @@ Claude Code(또는 Antigravity 내 Claude)에게 자연어로 지시:
 
 → Claude가 `directives/plan_retreat.md`를 읽고 → `execution/generate_retreat_plan.py` 실행 → `.tmp/dossiers/`에 기획안 저장
 
+## 자동화 (launchd 스케줄)
+
+macOS `launchd`로 정기 작업을 돌립니다. plist는 `__HYDS_PATH__` 플레이스홀더를 쓰므로 등록 시 실제 경로로 치환합니다.
+
+| plist | 작업 | 주기 |
+|-------|------|------|
+| `com.hyds.daily-monitor` | 진행 수련회 점검 | 매일 09:30 |
+| `com.hyds.realtime` | 실시간 위험 체크 | 수시 |
+| `com.hyds.weekly-review` | 주간 종합 리뷰 | 매주 일 22:00 |
+| `com.hyds.weekly-todos` | 주간 To-Do | 매주 |
+| `com.hyds.archive` | 종료 수련회 아카이브 | — |
+| **`com.hyds.weekly-trends`** | **주간 트렌드 보고 (trend-scout)** | **매주 월 09:45** |
+
+### 등록 / 해제
+
+```bash
+HYDS="$HOME/Desktop/코딩/1인 회사 만들기"
+NAME=com.hyds.weekly-trends          # 등록할 plist 이름
+
+# 1) 경로 치환 후 LaunchAgents에 복사
+sed "s|__HYDS_PATH__|$HYDS|g" "$HYDS/$NAME.plist" > "$HOME/Library/LaunchAgents/$NAME.plist"
+
+# 2) 로드(등록) / 확인 / 해제
+launchctl load   "$HOME/Library/LaunchAgents/$NAME.plist"
+launchctl list | grep hyds
+launchctl unload "$HOME/Library/LaunchAgents/$NAME.plist"
+```
+
+### 주간 트렌드 — 먼저 mock으로 점검 (비용 0)
+
+```bash
+# 관심 키워드는 data/trend_keywords.json 의 keywords 배열에 직접 입력 (비우면 자율 선정)
+venv/bin/python execution/scout_trends.py --weekly --mock   # 더미로 형식·폴더 확인
+venv/bin/python execution/scout_trends.py --weekly          # 실호출(유료 ~$0.1)
+```
+
+> ⚠️ 현재 주간 트렌드는 결과를 `.tmp/media_drafts/{날짜}_주간-트렌드_trends/`에 **로컬 저장만** 합니다(텔레그램 발송 미연동 — CHECKLIST 5-4 후속). 알림이 필요하면 텔레그램 연동 후 plist를 활성화하세요.
+
 ## 원칙
 
 1. **Directive에 한국어로 SOP 쓴다** — 코딩 아니라 사용설명서

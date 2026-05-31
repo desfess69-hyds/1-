@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- 주간 트렌드 자동 보고 — 매주 월요일 09:45. (daily-monitor 09:30과 겹치지 않게 09:45) -->
+<!-- ⚠️ 실호출(유료 ~$0.1/회). 텔레그램 발송이 아직 없어 결과는 .tmp/media_drafts/에만 저장됨. -->
+<!-- 테스트 먼저: venv/bin/python execution/scout_trends.py --weekly --mock -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hyds.weekly-trends</string>
+    <key>WorkingDirectory</key>
+    <string>__HYDS_PATH__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HYDS_PATH__/venv/bin/python</string>
+        <string>execution/scout_trends.py</string>
+        <string>--weekly</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>45</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>__HYDS_PATH__/.tmp/weekly-trends.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HYDS_PATH__/.tmp/weekly-trends.err.log</string>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
