@@ -49,3 +49,6 @@ model: sonnet
 - 수련회 홍보용이면 → retreat-planner 기획 컨텍스트(본부장 경유).
 
 ## 첫 한 번은 본부장이 확정한 카피로만 이미지를 생성한다. 업로드처럼 외부로 나가는 작업은 본부장 승인 후.
+
+## 작업 기억 (참조 의무 — System v2.1)
+새 작업 전 `docs/PLAN.md`(미디어팀 계획)·`docs/CONTEXT.md`(기술·톤 맥락)·`docs/CHECKLIST.md`(공정 진척)를 확인해 현재 단계·제약을 파악한다. 톤·금기 마스터는 `directives/media_brand_tone.md`.

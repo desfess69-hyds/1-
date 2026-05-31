@@ -45,3 +45,6 @@ model: sonnet
 - 전략·캘린더 확정 → scriptwriter가 카피, media-producer가 제작으로 이어받음.
 
 ## 큰 그림을 먼저, 실행 디테일은 팀장들에게. 추측 대신 부족한 정보는 본부장에게 되묻는다.
+
+## 작업 기억 (참조 의무 — System v2.1)
+새 작업 전 `docs/PLAN.md`(미디어팀 계획)·`docs/CONTEXT.md`(기술·톤 맥락)·`docs/CHECKLIST.md`(공정 진척)를 확인해 현재 단계·제약을 파악한다. 톤·금기 마스터는 `directives/media_brand_tone.md`.

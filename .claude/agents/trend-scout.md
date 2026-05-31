@@ -114,3 +114,6 @@ trend-scout는 본부장(`media-director`) 호출 시 가장 먼저 실행되며
 - 본인 키워드가 금기 위반 → 즉시 거절 + 대안 제시
 - 트렌드 수명 < 7일 → 노란불 경고 + 진행 여부 확인
 - WebSearch 사용 시 신뢰 가능 출처(공식 인스타·틱톡)만, 루머 X
+
+## 작업 기억 (참조 의무 — System v2.1)
+새 작업 전 `docs/PLAN.md`(미디어팀 계획)·`docs/CONTEXT.md`(기술·톤 맥락)·`docs/CHECKLIST.md`(공정 진척)를 확인해 현재 단계·제약을 파악한다. 톤·금기 마스터는 `directives/media_brand_tone.md`.

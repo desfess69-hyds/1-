@@ -51,3 +51,6 @@ N) [CTA] ...
 - 카드뉴스 카피 규칙: `directives/create_card_news.md`
 
 ## 첫 한 번은 카피를 본부장(→대표)에게 확정받은 뒤 제작 단계로 넘긴다.
+
+## 작업 기억 (참조 의무 — System v2.1)
+새 작업 전 `docs/PLAN.md`(미디어팀 계획)·`docs/CONTEXT.md`(기술·톤 맥락)·`docs/CHECKLIST.md`(공정 진척)를 확인해 현재 단계·제약을 파악한다. 톤·금기 마스터는 `directives/media_brand_tone.md`.
