@@ -44,7 +44,12 @@ def build_concept(topic: str, tone: str, mock: bool, trend_brief: str = "") -> s
         "directives/media_brand_tone.md 톤을 지켜, 이 릴스의 concept.md를 작성해줘. "
         "톤앤매너·핵심 메시지 1개·시리즈 위치·타깃을 간결한 마크다운으로."
     )
-    return ask_claude(prompt, system="너는 HYDS concept-planner다. 한국어, 과장 금지.", max_tokens=1200)
+    return ask_claude(
+        prompt,
+        system=("너는 HYDS concept-planner다. 한국어, 과장 금지. "
+                "**사실 창작 금지(Hard Rule)**: 브리프에 없는 사실(가격·일정·장소·인명·프로그램·요일·URL)을 지어내지 마라. 모르면 '미정'."),
+        max_tokens=1200,
+    )
 
 
 def main():
