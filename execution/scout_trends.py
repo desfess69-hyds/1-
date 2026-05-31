@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from execution.media_common import (
-    MOCK_BANNER, draft_dir, write_files, extract_json, PROJECT_ROOT,
+    MOCK_BANNER, draft_dir, write_files, PROJECT_ROOT,
 )
 
 SYSTEM = (

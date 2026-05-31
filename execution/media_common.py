@@ -55,6 +55,23 @@ def write_files(base: Path, files: dict[str, str]) -> list[Path]:
     return written
 
 
+def split_sections(raw: str, valid_names: list[str]) -> dict[str, str]:
+    """'===FILE:파일명===' 마커로 구분된 멀티파일 응답을 {파일명: 내용}으로 분해.
+
+    JSON보다 잘림·이스케이프에 강하다. 응답이 중간에 truncate돼도 그 전까지
+    완성된 섹션은 그대로 살아남는다. valid_names에 있는 파일명만 채택.
+    """
+    out: dict[str, str] = {}
+    parts = re.split(r"(?m)^={2,}\s*FILE:\s*(.+?)\s*={2,}\s*$", raw or "")
+    # parts = [머리말, name1, content1, name2, content2, ...]
+    for i in range(1, len(parts) - 1, 2):
+        name = parts[i].strip()
+        content = parts[i + 1].strip()
+        if name in valid_names and content:
+            out[name] = content
+    return out
+
+
 def extract_json(raw: str) -> dict:
     """Claude 응답에서 JSON 블록만 뽑아 파싱. 실패하면 빈 dict."""
     s = (raw or "").strip()

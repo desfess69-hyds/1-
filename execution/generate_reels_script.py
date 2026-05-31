@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from execution.media_common import MOCK_BANNER, draft_dir, write_files, extract_json
+from execution.media_common import MOCK_BANNER, draft_dir, write_files, split_sections
 
 SYSTEM = (
     "너는 HYDS 미디어 본부의 scriptwriter 겸 media-producer다. "
@@ -92,20 +92,27 @@ def build_reels_files(topic: str, length: int, tone: str, platform: str,
 
     from execution.claude_client import ask_claude
     trend_ctx = f"\n\n[trend-scout 트렌드 브리프 — 반영할 것]\n{trend_brief}" if trend_brief else ""
+    file_names = [KEY_TO_FILE[k] for k in FILE_KEYS]
+    marker_order = "\n".join(f"===FILE:{fn}===" for fn in file_names)
     prompt = (
         f"주제: {topic}\n길이: {length}초\n톤/컨셉: {tone}\n플랫폼: {platform}{trend_ctx}\n\n"
-        "directives/create_reels.md를 따라 아래 6개를 만들어 JSON으로만 출력해줘 "
-        "(다른 텍스트 금지). 키: script(대본+컷시트 마크다운), "
-        "vrew_script(한 줄=한 컷 + [#키워드]), capcut_guide(단계별), "
-        "caption(캡션+해시태그 30개), bgm(분위기·곡3·출처), thumbnail_brief(썸네일).\n"
-        '{"script":"...","vrew_script":"...","capcut_guide":"...","caption":"...","bgm":"...","thumbnail_brief":"..."}'
+        "directives/create_reels.md를 따라 아래 6개 파일을 만들어줘. "
+        "각 파일은 반드시 '===FILE:파일명===' 마커 줄로 시작하고, 그 아래 내용을 그대로 쓴다. "
+        "마커 줄 외의 설명·코드펜스는 절대 쓰지 마라.\n"
+        "- script.md: 대본 + 컷 시트(마크다운)\n"
+        "- vrew_script.txt: 한 줄=한 컷, 각 줄 끝 [#키워드]\n"
+        "- capcut_guide.md: CapCut 단계별 가이드\n"
+        "- caption.txt: 인스타 캡션 + 해시태그 30개\n"
+        "- bgm.md: 분위기·곡 3개·무료 출처\n"
+        "- thumbnail_brief.md: 썸네일 디자인 브리프\n\n"
+        f"출력 순서(이 마커들을 그대로 사용):\n{marker_order}"
     )
-    raw = ask_claude(prompt, system=SYSTEM, max_tokens=4000)
-    data = extract_json(raw)
+    raw = ask_claude(prompt, system=SYSTEM, max_tokens=10000)
+    data = split_sections(raw, file_names)
     if not data:
-        # 파싱 실패 → 형식은 유지하되 raw를 script.md에 담아 사람이 확인
+        # 마커 파싱 완전 실패 → raw를 script.md에 담아 사람이 확인 (형식은 유지)
         return {"script.md": f"# 파싱 실패 — Claude 원문\n\n{raw}"}
-    return {KEY_TO_FILE[k]: str(data.get(k, "")).strip() for k in FILE_KEYS if data.get(k)}
+    return data
 
 
 def main():
