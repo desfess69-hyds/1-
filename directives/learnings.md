@@ -12,3 +12,5 @@
 - 2026-05-30 | media-director 본부장 패턴 도입 — 평면 7명 위임 → 2단계 위임으로 부장 부담 감소
 - 2026-05-30 | System v2.1 도입 — 운영 모드 4종(STRICT/REVIEW/FAST/CHAT)으로 일상 대화는 가볍게, 코드 작업은 풀 시스템. 부장 원칙에 0번(운영 모드 인식) 추가. 위험 작업은 모드 무관 STRICT 강제 승급.
 - 2026-05-30 | trend-scout 미디어 본부 4번째 팀장 정착 — 트렌드 작업 시 가장 먼저 실행. 미디어 팀장은 media_brand_tone.md를 톤·금기 마스터로 반드시 선참조. (CHECKLIST 단계 0~2 완료)
+- 2026-05-31 | Office 단계 4 완료 — trend-scout 10번째 캐릭터 + 미디어 회의실 5명(수련회 좌표 x+402 미러로 겹침 방지). runMediaHQ에 TREND_RE 결정적 보정(LLM이 trend-scout 누락해도 키워드 있으면 맨 앞 주입) → 트렌드 브리프를 다운스트림 팀장 컨텍스트로 주입. 교훈: LLM 라우팅은 결정적 가드와 병행해야 안정적. F5 시각 확인은 대표 OK로 통과.
+- 2026-05-31 | 단계 3 execution 3종(mock) — media_common.py 공통화(slug·draft_dir·extract_json) 후 scout/reels/package 작성. 모든 스크립트에 --mock 플래그로 Claude 호출 없이 형식·폴더(9종) 검증. 교훈: 유료 API 스크립트는 mock 골격부터 만들어 폴더/파일 형식을 0원으로 확정한 뒤 실제 호출로 넘어가면 안전. 실제 호출 경로는 아직 미검증(대표 승인 시 1건만 소액 테스트 예정).

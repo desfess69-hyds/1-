@@ -39,17 +39,17 @@
 
 ## 단계 3 — execution 스크립트 3종
 
-- [ ] 3-1. `execution/scout_trends.py` — 트렌드 키워드 → CapCut 가이드 JSON 생성
+- [x] 3-1. `execution/scout_trends.py` — 트렌드 키워드 → CapCut 가이드 JSON 생성
   - 입력: 키워드 5개 + 주제
   - 출력: `.tmp/media_drafts/{slug}/trend_brief.md`
   - 의존: `claude_client.py`
   - 예외 처리: API 키 누락·네트워크 실패·금기 키워드 필터
-- [ ] 3-2. `execution/generate_reels_script.py` — 30초 릴스 대본 + 컷 시트
+- [x] 3-2. `execution/generate_reels_script.py` — 30초 릴스 대본 + 컷 시트
   - 입력: 주제 / 길이 / 톤 / 플랫폼
   - 출력: `script.md`, `vrew_script.txt`, `capcut_guide.md`, `caption.txt`, `bgm.md`, `thumbnail_brief.md`
-- [ ] 3-3. `execution/generate_media_package.py` — 위 두 스크립트 묶음 + 폴더 정리 + 텔레그램 발송
-- [ ] 3-4. 각 스크립트 단위 테스트 (mock 입력으로 결과물 검증)
-- [ ] 3-5. git 커밋: "HYDS: 미디어 execution 3종 추가"
+- [x] 3-3. `execution/generate_media_package.py` — 위 두 스크립트 묶음 + 폴더 정리 + 텔레그램 발송
+- [x] 3-4. 각 스크립트 단위 테스트 (mock 입력으로 결과물 검증)
+- [x] 3-5. git 커밋: "HYDS: 미디어 execution 3종 추가"
 
 ---
 
@@ -60,7 +60,7 @@
 - [x] 4-3. 백엔드 화이트리스트 `MEDIA_WORKERS`에 trend-scout 등록
 - [x] 4-4. 채팅 키워드 라우팅: "트렌드/밈/챌린지/유행/CapCut" → trend-scout
 - [x] 4-5. `runMediaHQ()` plan 생성 시 trend-scout 호출 조건 추가
-- [ ] 4-6. F5 새로고침 + 화면 확인 (캐릭터 좌표 겹침 없는지)
+- [x] 4-6. F5 새로고침 + 화면 확인 (캐릭터 좌표 겹침 없는지)
 - [x] 4-7. git 커밋: "HYDS Office: trend-scout 캐릭터 + 회의실 5명 배치"
 
 ---
@@ -122,8 +122,8 @@
 ## 진척률 계산
 
 총 항목 수: **52개**
-완료: **21** (단계 0~2 + 4. 4-6 F5 시각 확인만 대표 몫)
-진척률: **약 40%** (52항목 중 21)
+완료: **27** (단계 0~2 + 4 + 3. 실제 Claude 호출 경로는 mock만 검증)
+진척률: **약 52%** (52항목 중 27)
 
 ---
 
