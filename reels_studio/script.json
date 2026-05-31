@@ -1,0 +1,87 @@
+{
+  "title": "서상륜 - 위대한 밀수꾼",
+  "subtitle": "한국 교회의 가슴 벅찬 출발점",
+  "trailer_template": "seosangryun",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "chapter": "프롤로그",
+      "title": "위대한 밀수꾼",
+      "narration": "",
+      "visual_prompt": "Cinematic historical Korean drama film style, photorealistic, late 19th century. A mysterious silhouette of a young Korean man wearing a traditional gat hat and white hanbok, carrying a large cloth-wrapped bundle (botjim) on his back, walking through misty mountain trail at dusk. Soft volumetric god rays piercing through morning fog. Wide cinematic shot, atmospheric and contemplative, no text, horizontal 16:9 widescreen, anamorphic lens flare, muted earth tones, film grain, Roger Deakins style cinematography.",
+      "duration": 10
+    },
+    {
+      "scene_id": 2,
+      "chapter": "1870년대 만주",
+      "title": "홍삼 장수 청년",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1870s Manchuria winter. Wide shot of the protagonist Seo Sang-ryun — a Korean man in his mid-30s, lean wiry build, weathered determined face, strong angular jawline, short black topknot hair under a traditional black gat hat, sharp intelligent dark eyes, light stubble, wearing layered white hanbok. He carries a wooden A-frame backpack (jige) loaded with bundles of red ginseng, walking through a snowy Manchurian frontier village street. Manchurian style wooden buildings with smoke rising from chimneys. Golden hour winter light, horizontal 16:9 widescreen, period accurate, film grain, deep depth of field.",
+      "duration": 10
+    },
+    {
+      "scene_id": 3,
+      "chapter": "1879년 만주",
+      "title": "장티푸스, 죽음의 그림자",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, late 19th century Manchuria. Close-up of the protagonist Seo Sang-ryun — a Korean man in his mid-30s with weathered angular face, strong jawline, short black topknot hair, light stubble — now feverish and pale, lying weakly on a thin straw mat in a dim cold Manchurian wooden shack. Sweat-soaked forehead, glassy half-closed dark eyes, breath visible in cold air. Slivers of pale light through cracks in wooden walls. Abandoned and alone, near death. Horizontal 16:9 widescreen, somber blue-grey palette, dramatic chiaroscuro lighting, shallow depth of field.",
+      "duration": 10
+    },
+    {
+      "scene_id": 4,
+      "chapter": "생명의 은인",
+      "title": "로스와 매킨타이어 선교사",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1870s Manchuria. Two compassionate Scottish Presbyterian missionaries in dark Victorian-era suits and waistcoats (one with full beard, one slightly younger), gently caring for the feverish protagonist Seo Sang-ryun — a Korean man in his mid-30s with weathered angular face, strong jaw, short black topknot hair, lean wiry build — lying on a wooden bed. One places a cool damp cloth on his forehead, the other holds a leather doctor's bag. Warm oil-lamp lantern light, hopeful tender atmosphere. Horizontal 16:9 widescreen, painterly cinematic composition, golden warm tones.",
+      "duration": 10
+    },
+    {
+      "scene_id": 5,
+      "chapter": "회심",
+      "title": "생명의 책을 만나다",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1880s. The protagonist Seo Sang-ryun — a recovered Korean man in his mid-30s with weathered angular face, strong jawline, short black topknot hair, light stubble, intelligent dark eyes — in clean white hanbok sitting quietly at a small wooden desk, reverently reading an old open Chinese-character Bible illuminated by a single warm candle. A subtle soft halo of golden divine light bathes his serene tear-filled face, profound spiritual awakening. Dark wooden interior, horizontal 16:9 widescreen, Rembrandt-like dramatic lighting, film grain, deeply moving emotional close-up.",
+      "duration": 10
+    },
+    {
+      "scene_id": 6,
+      "chapter": "1882년",
+      "title": "최초의 한글 복음서",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1882 Manchuria. Wide shot of two men working intently at a wooden desk cluttered with papers, ink wells, and Chinese Bibles: a Scottish missionary John Ross with full beard wearing a dark coat, and the protagonist Seo Sang-ryun — a Korean translator in his mid-30s with weathered angular face, strong jawline, short black topknot hair, lean wiry build — in white hanbok, both writing Korean Hangul letters with brush pens by lantern light. Scholarly historic translation moment. Horizontal 16:9 widescreen, warm sepia tones, atmospheric.",
+      "duration": 10
+    },
+    {
+      "scene_id": 7,
+      "chapter": "압록강 국경",
+      "title": "발각의 순간",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1880s Yalu River border at night. Stern uniformed Joseon border guards holding lanterns aggressively searching through a Korean merchant's traditional cloth-wrapped bundle (botjim), red ginseng roots scattered aside, thin paper Korean Hangul Bible booklets pulled out and revealed at the bottom. The protagonist Seo Sang-ryun — a Korean man in his mid-30s with weathered angular face, strong jawline, short black topknot hair, lean wiry build — in white hanbok stands frozen with terror, pale face beaded with sweat, heart-pounding moment. Horizontal 16:9 widescreen, dramatic cold blue tones with warm lantern accents, intense suspenseful atmosphere, cinematic, period accurate.",
+      "duration": 10
+    },
+    {
+      "scene_id": 8,
+      "chapter": "절체절명의 위기",
+      "title": "감옥에 갇히다",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1880s Joseon-era prison cell. A dim filthy stone and wood prison interior with iron bars, single shaft of pale moonlight through a small barred window. The protagonist Seo Sang-ryun — a Korean man in his mid-30s with weathered angular face, strong jawline, short black topknot hair, lean wiry build, gaunt and bruised — in torn dirty white hanbok kneels exhausted on the dirt floor in heavy wooden cangue (칼) restraints around his neck, head bowed in despair, awaiting execution. Cold blue-grey color palette, hopeless somber mood. Horizontal 16:9 widescreen, dramatic chiaroscuro lighting, film grain, Rembrandt-like shadows.",
+      "duration": 10
+    },
+    {
+      "scene_id": 9,
+      "chapter": "구원의 손길",
+      "title": "김효순, 그리고 탈출",
+      "narration": "",
+      "visual_prompt": "Cinematic historical drama film style, photorealistic, 1880s Joseon. A nighttime jail-break: an older Korean man in his mid-50s (Kim Hyo-soon, a fellow believer) with greying beard in modest dark hanbok urgently unlocking the wooden cangue and prison gate of the protagonist Seo Sang-ryun — a Korean man in his mid-30s with weathered angular face, strong jawline, short black topknot hair, lean wiry build, in torn white hanbok — both looking around fearfully. Then together fleeing through dark narrow Joseon village alleyways under a crescent moon, urgent footsteps in shadow. Lantern light flickering, tense escape atmosphere. Horizontal 16:9 widescreen, cold moonlight blue with warm lantern accents, film grain, kinetic dramatic composition.",
+      "duration": 10
+    },
+    {
+      "scene_id": 10,
+      "chapter": "1883년 황해도 장연 솔내(소래)",
+      "title": "최초의 자생 교회, 첫 권서인",
+      "narration": "",
+      "source_image": "images/sorae_church_16x9.jpg",
+      "visual_prompt": "Subtle natural everyday movement of the historic Sorae Church scene. Koreans in white hanbok casually walking, chatting, gathering in front of the traditional tiled-roof hanok church. Some sitting, some standing, a few children moving around. Gentle breeze rustling the trees in the background. Slow subtle camera push-in. Documentary-style natural motion, no dramatic gestures, no praying poses, no holy light effects. Preserve the original black-and-white vintage photograph look and composition. Horizontal 16:9."
+    }
+  ]
+}

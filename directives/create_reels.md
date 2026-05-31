@@ -6,6 +6,50 @@
 
 ---
 
+## 0. 제작 모드 — `mode: vrew | auto`
+
+릴스를 "재료까지만" 만들지(`vrew`), "완성 영상까지" 만들지(`auto`)를 먼저 정한다.
+
+| mode | 산출물 | 편집 | 비용 | 언제 |
+|------|--------|------|------|------|
+| **`vrew`** (기본) | 재료 9종(§3) — `vrew_script.txt`·`script.md` 등 | 본인이 Vrew/CapCut에서 5분 | Claude 호출만 | 트렌드 감성·손글씨·전환이 중요한 콘텐츠 |
+| **`auto`** | 완성 MP4 (음성+영상+자막+BGM) | 0분 (자동) | ⚠️ **유료 API**(음성·영상 생성) | 메시지형(B타입) 양산, 편집 5분도 부담일 때 |
+
+### `auto` 모드 흐름 (reels_studio 호출)
+
+`vrew` 모드 결과물(`vrew_script.txt`)을 그대로 입력으로 받아 완성 영상을 만든다.
+
+```
+[vrew 모드 산출] .tmp/media_drafts/{날짜}_{슬러그}/vrew_script.txt  (+ script.md)
+   ↓  execution/run_reels_auto.py  (HYDS wrapper)
+[변환] 같은 폴더에 script.json 생성 (reels_studio 스키마: title·hook·scenes·cta)
+   ↓  reels_studio/run_manual.py  (step 2~4)
+[음성] step2 (ElevenLabs)  →  [영상] step3 (영상 생성 API)  →  [편집] step4 (FFmpeg 자막·BGM)
+   ↓
+[완성] reels_studio/output/{제목}/final.mp4
+```
+
+실행:
+```bash
+# 변환만 (비용 0) — script.json 만들고 멈춤
+python execution/run_reels_auto.py --draft ".tmp/media_drafts/{날짜}_{슬러그}/"
+
+# 변환 + 실제 영상 제작 (⚠️ 유료 API 호출 — 대표 승인 후)
+python execution/run_reels_auto.py --draft ".tmp/media_drafts/{날짜}_{슬러그}/" --run --duration 30 --aspect 9:16
+```
+
+> **왜 run_manual.py인가**: reels_studio의 `run_all.py`는 step1에서 Ollama로 대본을
+> **새로 생성**해 우리가 변환한 script.json을 버린다. `run_manual.py`는 기존
+> script.json을 받아 step 2~4만 돌리므로 HYDS 대본이 보존된다. wrapper가 이를 자동 처리.
+>
+> **안전장치**: `--run` 없으면 변환만(비용 0). `--run`은 유료 API를 부르므로
+> 부장 8원칙 0항(위험 작업 STRICT 승급)에 따라 대표 승인 후 실행한다.
+>
+> **상태**: step3 영상 생성기는 Atlas Cloud → **fal.ai 전환 진행 중**(별도 작업).
+> 전환 전까지 `auto` 모드 영상 단계는 기존 백엔드 기준.
+
+---
+
 ## 1. 30초 릴스 표준 구조 (HYDS)
 
 | 시간 | 역할 | 글자수 | 핵심 |

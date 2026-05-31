@@ -1,0 +1,25 @@
+{
+  "title": "여기에 제목을 입력하세요",
+  "hook": "초반 1초에 시청자를 잡는 한국어 훅 문장",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "narration": "씬 1의 한국어 내레이션 (5초 분량)",
+      "visual_prompt": "English cinematic prompt: subject, action, setting, lighting, camera",
+      "duration": 5
+    },
+    {
+      "scene_id": 2,
+      "narration": "씬 2의 한국어 내레이션",
+      "visual_prompt": "English cinematic prompt for scene 2",
+      "duration": 5
+    },
+    {
+      "scene_id": 3,
+      "narration": "씬 3의 한국어 내레이션",
+      "visual_prompt": "English cinematic prompt for scene 3",
+      "duration": 5
+    }
+  ],
+  "cta": "팔로우, 좋아요 부탁드려요!"
+}

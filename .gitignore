@@ -37,3 +37,12 @@ env/
 
 # OS
 Thumbs.db
+
+# reels_studio (릴스 auto 모드 영상 엔진)
+# 생성된 영상·음성·중간 산출물 (대용량)
+reels_studio/output/
+reels_studio/__pycache__/
+# 단일 .env 원칙 — 루트 .env로 통합 예정
+reels_studio/.env
+# BGM 라이브러리 (45MB mp3) — 엔진 동작엔 필요하나 git 이력 오염 방지차 제외
+reels_studio/bgm/

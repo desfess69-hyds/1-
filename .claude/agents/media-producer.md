@@ -19,10 +19,13 @@ model: sonnet
 2. **입력 받기** (본부장/팀장에게서): 확정 카피, 슬라이드 수, 톤, 대상, (홍보면) 교회·기간·신청 링크.
 3. **카드뉴스 이미지 생성**:
    `python execution/make_card_image.py --text "..." --output ".tmp/card_drafts/{날짜}_{슬러그}/slide_NN.png"`
-4. **영상/릴스 산출물** (필요 시):
-   - 컷 시트 (장면별 화면·자막·길이)
-   - 자막 텍스트 파일, BGM 분위기 가이드
-   - 썸네일 이미지
+4. **영상/릴스 산출물** (필요 시) — `directives/create_reels.md` §0 모드 결정:
+   - **`vrew` 모드 (기본)**: 컷 시트·자막·BGM 가이드·썸네일 등 재료만. 본인이 Vrew/CapCut 5분 편집.
+   - **`auto` 모드 (완성 영상)**: `vrew_script.txt`를 reels_studio 파이프라인에 넘겨 MP4까지 자동 제작.
+     - 진입점: `python execution/run_reels_auto.py --draft <드래프트폴더>` (변환만, 비용 0)
+     - 실제 제작: `--run` 추가 → reels_studio/run_manual.py(step 2~4: 음성→영상→편집) 호출.
+       (스튜디오 본체 엔트리는 `reels_studio/run_all.py`지만, 기존 대본 보존을 위해 wrapper는 run_manual.py를 부른다.)
+     - ⚠️ `--run`은 **유료 API**(음성·영상 생성) 호출 → **본부장/대표 승인 후** 실행.
 5. **저장 폴더**: `.tmp/card_drafts/{날짜}_{슬러그}/`
    - slide_01.png ~ slide_NN.png
    - caption.txt (scriptwriter 카피)
@@ -37,7 +40,9 @@ model: sonnet
 
 ## 실행 도구 (execution/)
 - `execution/make_card_image.py` — Pillow로 텍스트+배경 합성
+- `execution/run_reels_auto.py` — (auto 모드) vrew_script.txt → script.json 변환 + reels_studio 영상 파이프라인 호출
 - `execution/upload_to_ig.py` — 인스타 업로드 (수동 가이드)
+- `reels_studio/` — auto 모드 영상 엔진 (step1 대본 / step2 음성 / step3 영상 / step4 편집)
 - `templates/card_bg/` — 통일된 배경 이미지
 
 ## 톤·규칙

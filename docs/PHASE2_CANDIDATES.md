@@ -1,8 +1,17 @@
 # PHASE2_CANDIDATES.md — 미디어팀 Phase 2 검토 후보
 
 > **작성**: 2026-05-31 (Phase 1 종결 시점)
-> **상태**: 검토 대기 — 대표가 실전 운영 후 우선순위 결정
+> **상태**: 🔄 진행 중 — **자동 영상 렌더는 `reels_studio` 통합으로 착수**(아래 후보 1 갱신), 나머지 2개는 검토 대기
 > **연관**: `docs/PLAN.md` §3.7(Phase 분할), `docs/CHECKLIST.md` 보류·차기
+
+---
+
+## ✅ 진행 갱신 (2026-05-31)
+
+**`reels_studio` 통합 완료.** 외부 프로젝트였던 `릴스_자동_제작`을 `reels_studio/`로 들여와 HYDS 3-layer에 붙였다. 자동 영상 렌더(후보 1)를 **Remotion이 아닌 step1~4 파이프라인**(Ollama 대본 / ElevenLabs 음성 / 영상 생성 API / FFmpeg 편집)으로 구현. `directives/create_reels.md`에 `mode: vrew | auto` 추가, `execution/run_reels_auto.py` wrapper가 HYDS `vrew_script.txt` → `script.json` 변환 후 파이프라인을 호출한다.
+
+- **진행 중**: step3 영상 생성기 **Atlas Cloud → fal.ai 전환**(별도 작업, 이번 통합 범위 밖).
+- 후보 1(Remotion)은 이 파이프라인으로 대체 — 정적 텍스트가 아닌 실제 생성 영상 기반.
 
 Phase 1은 "재료 자동 생성 + 5분 수동 편집" 구조로 완주했다. Phase 2는 **수동 단계를 줄이는 자동화** 3가지를 후보로 둔다. 셋 다 Phase 1을 안 건드리고 **추가**되는 모듈이라, 하나씩 독립 도입 가능.
 

@@ -22,3 +22,5 @@
 - 2026-05-31 | AI 환각 발견 — 브리프 누락 정보를 지어냄(가격 15만원, 요일 오류). 교훈을 hard rule로 격상: 누락은 미정 표기.
 - 2026-05-31 | 카드뉴스 PNG 6장 생성 — make_card_image.py 뼈대를 실사용으로 업그레이드(한글 폰트 자동탐색 AppleSDGothicNeo, --text-file 실줄바꿈+자동래핑+사방여백+세로중앙). 교훈: 한글 폰트엔 컬러 이모지 글리프가 없어 □ 두부박스가 뜸 → 렌더 직전 이모지 스트립 필수(.txt 원본은 보존). 텔레그램 재발송 시 이전 환각본 폐기 안내 동봉.
 - 2026-05-31 | Phase 1 종결 — 단계 0~8 완주. 첫 실전 패키지(릴스 9종+PNG 6장) $1.2 비용으로 인스타 업로드 직전. 자가 강화 2건 검증(환각→hard rule 6-A, max_tokens→마커 분할). 미디어팀 정상 가동.
+- 2026-05-31 | [주간리뷰] 모니터링 3회·주간To-Do 1회·결정 0건 → 자동 집계 기록
+- 2026-05-31 | reels_studio(외부 릴스 자동제작) HYDS 통합 — create_reels.md에 mode:vrew|auto 추가, run_reels_auto.py wrapper가 vrew_script.txt→script.json 변환 후 파이프라인 호출. 교훈 ①.gitignore는 **인라인 주석 미지원**(`경로  # 설명`이 패턴을 깨뜨려 output/ 845MB가 누출될 뻔) → 주석은 반드시 별도 줄. ②run_all.py는 step1에서 대본을 새로 생성하므로 변환 script.json을 버림 → 기존 대본 보존엔 run_manual.py(step2~4)가 맞음. ③유료 API 호출 파이프라인은 wrapper 기본=변환만, --run 옵션 opt-in으로 비용 사고 차단.
