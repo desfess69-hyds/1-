@@ -78,14 +78,14 @@
 
 ## 단계 6 — 시스템 지침 4가지 자동 검증
 
-- [ ] 6-1. **컨텍스트 매뉴얼**: trend-scout가 작업 시 directives/media_brand_tone.md 자동 참조 확인
-- [ ] 6-2. **작업 기억**: 모든 sub-agent에 "PLAN/CONTEXT/CHECKLIST 참조" 지침 명시
-- [ ] 6-3. **품질 검사**:
-  - [ ] 모든 execution 스크립트에 try-except 적용
-  - [ ] API 키 하드코딩 없음 확인 (grep)
-  - [ ] 무한 루프 위험 없음 확인
-- [ ] 6-4. **완료 보고서**: 본 작업 끝나면 정해진 양식으로 보고서 제출
-- [ ] 6-5. git 커밋: "HYDS: Phase 1 검증 완료"
+- [x] 6-1. **컨텍스트 매뉴얼**: trend-scout가 작업 시 directives/media_brand_tone.md 자동 참조 확인
+- [ ] 6-2. **작업 기억**: 모든 sub-agent에 "PLAN/CONTEXT/CHECKLIST 참조" 지침 명시  ← 보류: 에이전트 정의 편집 권한 별도 승인 필요(미디어 5개 대상)
+- [x] 6-3. **품질 검사**:
+  - [x] 모든 execution 스크립트에 try-except 적용 (미디어 3종 완료; 일부 기존 스크립트는 import 클라이언트에 위임)
+  - [x] API 키 하드코딩 없음 확인 (grep)
+  - [x] 무한 루프 위험 없음 확인
+- [x] 6-4. **완료 보고서**: 본 작업 끝나면 정해진 양식으로 보고서 제출
+- [x] 6-5. git 커밋: "HYDS: Phase 1 검증 완료"
 
 ---
 

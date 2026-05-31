@@ -69,23 +69,28 @@ def main():
     files: dict[str, str] = {}
     trend_brief = ""
 
-    # 1) trend-scout 가장 먼저 (선택) → 브리프를 다운스트림에 전달
-    if args.with_trend:
-        keywords = [k.strip() for k in args.keywords.split(",") if k.strip()]
-        print("   ① trend-scout 정찰...")
-        tf = build_trend_brief(args.topic, keywords, args.platform, args.mock)
-        files.update(tf)
-        trend_brief = tf.get("trend_brief.md", "")
+    try:
+        # 1) trend-scout 가장 먼저 (선택) → 브리프를 다운스트림에 전달
+        if args.with_trend:
+            keywords = [k.strip() for k in args.keywords.split(",") if k.strip()]
+            print("   ① trend-scout 정찰...")
+            tf = build_trend_brief(args.topic, keywords, args.platform, args.mock)
+            files.update(tf)
+            trend_brief = tf.get("trend_brief.md", "")
 
-    # 2) concept-planner → 컨셉
-    print("   ② concept-planner 컨셉...")
-    files["concept.md"] = build_concept(args.topic, args.tone, args.mock, trend_brief)
+        # 2) concept-planner → 컨셉
+        print("   ② concept-planner 컨셉...")
+        files["concept.md"] = build_concept(args.topic, args.tone, args.mock, trend_brief)
 
-    # 3) scriptwriter + media-producer → 6종 (트렌드 브리프 반영)
-    print("   ③ scriptwriter+producer 대본·자료 6종...")
-    files.update(build_reels_files(
-        args.topic, args.length, args.tone, args.platform, args.mock, trend_brief,
-    ))
+        # 3) scriptwriter + media-producer → 6종 (트렌드 브리프 반영)
+        print("   ③ scriptwriter+producer 대본·자료 6종...")
+        files.update(build_reels_files(
+            args.topic, args.length, args.tone, args.platform, args.mock, trend_brief,
+        ))
+    except Exception as e:
+        print(f"❌ 패키지 생성 실패: {e}")
+        print("   - API 키/잔액/네트워크를 확인하세요. 형식만 보려면 --mock 으로 실행.")
+        sys.exit(1)
 
     # 4) assets/ 안내 파일 (빈 폴더가 커밋/표시되도록)
     write_file(base / "assets" / "README.txt",

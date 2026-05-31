@@ -132,7 +132,12 @@ def main():
     mode = "MOCK" if args.mock else "실제(Claude 호출)"
     print(f"🎬 릴스 대본 [{mode}] — {args.topic} ({args.length}초, {args.tone})")
 
-    files = build_reels_files(args.topic, args.length, args.tone, args.platform, args.mock)
+    try:
+        files = build_reels_files(args.topic, args.length, args.tone, args.platform, args.mock)
+    except Exception as e:
+        print(f"❌ 대본 생성 실패: {e}")
+        print("   - API 키/잔액/네트워크를 확인하세요. 형식만 보려면 --mock 으로 실행.")
+        sys.exit(1)
     written = write_files(base, files)
     print(f"✅ 저장: {base}  ({len(written)}개 파일)")
     for w in written:
