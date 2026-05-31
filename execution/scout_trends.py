@@ -81,6 +81,34 @@ def build_trend_brief(topic: str, keywords: list[str], platform: str, mock: bool
     return {"trend_brief.md": ask_claude(prompt, system=SYSTEM, max_tokens=2500)}
 
 
+def notify_trends(topic: str, brief: str, folder_name: str) -> bool:
+    """trend_brief 요약을 텔레그램 카드로 발송. 성공 True / 실패·미설정 False.
+
+    텔레그램 미설정·네트워크 실패에도 예외를 던지지 않고 False를 반환한다
+    (자동 잡이 죽지 않도록). 본문은 HTML escape + 3500자로 잘라 전송.
+    """
+    import html
+    try:
+        from execution.telegram_notify import send_telegram
+    except Exception:
+        return False
+
+    body = html.escape(brief.strip())
+    limit = 3500
+    if len(body) > limit:
+        body = body[:limit] + "\n…(생략 — 전체는 trend_brief.md 참고)"
+    card = (
+        f"🕵️ <b>이번 주 트렌드 — {html.escape(topic)}</b>\n"
+        f"📂 {html.escape(folder_name)}\n\n"
+        f"{body}\n\n"
+        f"→ CapCut 검색어로 5분 편집 후 업로드"
+    )
+    try:
+        return bool(send_telegram(card))
+    except Exception:
+        return False
+
+
 def main():
     p = argparse.ArgumentParser(description="트렌드 정찰 → trend_brief.md")
     p.add_argument("--topic", help="주제 (예: 평택교회 수련회 홍보)")
@@ -88,6 +116,7 @@ def main():
     p.add_argument("--platform", default="인스타 릴스", help="적용 플랫폼")
     p.add_argument("--weekly", action="store_true", help="주간 자동 모드 (trend_keywords.json 기준)")
     p.add_argument("--mock", action="store_true", help="Claude 호출 없이 더미 출력 (비용 0)")
+    p.add_argument("--no-telegram", action="store_true", help="텔레그램 발송 생략")
     p.add_argument("--output", help="결과 폴더 직접 지정 (선택)")
     args = p.parse_args()
 
@@ -132,8 +161,17 @@ def main():
     print(f"✅ 저장: {base}")
     for w in written:
         print(f"   - {w.relative_to(base.parent)}")
-    if args.mock:
-        print("ℹ️  MOCK 출력입니다. 실제 트렌드를 받으려면 --mock 빼고 실행 (유료).")
+
+    # 텔레그램 발송 — mock/--no-telegram이면 미리보기만, 실제면 카드 전송
+    brief = files.get("trend_brief.md", "")
+    if args.mock or args.no_telegram:
+        why = "mock" if args.mock else "--no-telegram"
+        print(f"ℹ️  텔레그램 발송 생략 ({why}). 결과는 위 폴더에 저장됨.")
+        if args.mock:
+            print("    실제 트렌드를 받으려면 --mock 빼고 실행 (유료).")
+    else:
+        ok = notify_trends(topic, brief, base.name)
+        print("📨 텔레그램 발송 " + ("성공" if ok else "실패/미설정(로컬엔 저장됨)"))
 
 
 if __name__ == "__main__":

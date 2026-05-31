@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- 주간 트렌드 자동 보고 — 매주 월요일 09:45. (daily-monitor 09:30과 겹치지 않게 09:45) -->
-<!-- ⚠️ 실호출(유료 ~$0.1/회). 텔레그램 발송이 아직 없어 결과는 .tmp/media_drafts/에만 저장됨. -->
-<!-- 테스트 먼저: venv/bin/python execution/scout_trends.py --weekly --mock -->
+<!-- ⚠️ 실호출(유료 ~$0.1/회) + 텔레그램 자동 발송. 발송 빼려면 ProgramArguments에 --no-telegram 추가. -->
+<!-- 테스트 먼저(비용0·발송X): venv/bin/python execution/scout_trends.py --weekly --mock -->
 <plist version="1.0">
 <dict>
     <key>Label</key>

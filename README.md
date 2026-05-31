@@ -77,11 +77,12 @@ launchctl unload "$HOME/Library/LaunchAgents/$NAME.plist"
 
 ```bash
 # 관심 키워드는 data/trend_keywords.json 의 keywords 배열에 직접 입력 (비우면 자율 선정)
-venv/bin/python execution/scout_trends.py --weekly --mock   # 더미로 형식·폴더 확인
-venv/bin/python execution/scout_trends.py --weekly          # 실호출(유료 ~$0.1)
+venv/bin/python execution/scout_trends.py --weekly --mock          # 더미·발송X (형식/폴더 확인)
+venv/bin/python execution/scout_trends.py --weekly                 # 실호출(유료 ~$0.1) + 텔레그램 발송
+venv/bin/python execution/scout_trends.py --weekly --no-telegram   # 실호출, 발송만 생략
 ```
 
-> ⚠️ 현재 주간 트렌드는 결과를 `.tmp/media_drafts/{날짜}_주간-트렌드_trends/`에 **로컬 저장만** 합니다(텔레그램 발송 미연동 — CHECKLIST 5-4 후속). 알림이 필요하면 텔레그램 연동 후 plist를 활성화하세요.
+> 결과는 `.tmp/media_drafts/{날짜}_주간-트렌드_trends/trend_brief.md`에 저장되고, **실호출 시 요약 카드가 텔레그램으로 발송**됩니다(`.env`의 `TELEGRAM_BOT_TOKEN`·`TELEGRAM_ADMIN_CHAT_ID` 필요). 미설정/실패해도 잡은 죽지 않고 로컬 저장은 유지됩니다.
 
 ## 원칙
 
